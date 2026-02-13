@@ -22,8 +22,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer toggle"
+        "type": "minecraft:run_command",
+        "command": "/veinminer toggle"
       }
     },
     {
@@ -32,8 +32,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer better_ore_vein_mining toggle"
+        "type": "minecraft:run_command",
+        "command": "/veinminer better_ore_vein_mining toggle"
       }
     },
     {
@@ -42,8 +42,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer better_tree_vein_mining toggle"
+        "type": "minecraft:run_command",
+        "command": "/veinminer better_tree_vein_mining toggle"
       }
     },
     {
@@ -52,8 +52,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer vein_size 64"
+        "type": "minecraft:run_command",
+        "command": "/veinminer vein_size 64"
       }
     },
     {
@@ -62,8 +62,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer whitelist list"
+        "type": "minecraft:run_command",
+        "command": "/veinminer whitelist list"
       }
     },
     {
@@ -72,8 +72,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer whitelist clear"
+        "type": "minecraft:run_command",
+        "command": "/veinminer whitelist clear"
       }
     },
     {
@@ -82,8 +82,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer load_from_disk"
+        "type": "minecraft:run_command",
+        "command": "/veinminer load_from_disk"
       }
     },
     {
@@ -92,8 +92,8 @@
       },
       "width": 150,
       "action": {
-        "type": "minecraft:dynamic/run_command",
-        "template": "/veinminer"
+        "type": "minecraft:run_command",
+        "command": "/veinminer"
       }
     }
   ],
