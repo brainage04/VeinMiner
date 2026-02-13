@@ -40,6 +40,9 @@ public final class VeinMinerCommand {
                 .then(literal("vein_size")
                         .then(argument("amount", IntegerArgumentType.integer(1))
                                 .executes(context -> setVeinSize(context.getSource(), IntegerArgumentType.getInteger(context, "amount")))))
+                .then(literal("leaf_decay_speed_multiplier")
+                        .then(argument("amount", IntegerArgumentType.integer(1))
+                                .executes(context -> setLeafDecaySpeedMultiplier(context.getSource(), IntegerArgumentType.getInteger(context, "amount")))))
                 .then(literal("better_ore_vein_mining")
                         .then(literal("toggle").executes(context -> toggleBetterOre(context.getSource())))
                         .then(literal("enable").executes(context -> setBetterOre(context.getSource(), true)))
@@ -87,6 +90,7 @@ public final class VeinMinerCommand {
         source.sendSuccess(() -> Component.literal("VeinMiner config:"), false);
         source.sendSuccess(() -> Component.literal(" - Enable Vein Mining: " + config.enableVeinMining), false);
         source.sendSuccess(() -> Component.literal(" - Vein Size: " + config.veinSize), false);
+        source.sendSuccess(() -> Component.literal(" - Leaf Decay Speed Multiplier: " + config.leafDecaySpeedMultiplier + "x"), false);
         source.sendSuccess(() -> Component.literal(" - Better Ore Vein Mining: " + config.betterOreVeinMining), false);
         source.sendSuccess(() -> Component.literal(" - Better Tree Vein Mining: " + config.betterTreeVeinMining), false);
         source.sendSuccess(() -> Component.literal(" - Whitelist size: " + config.whitelist.size()), false);
@@ -111,6 +115,14 @@ public final class VeinMinerCommand {
         config.veinSize = veinSize;
         VeinMinerConfigManager.saveToDisk(source.getServer());
         source.sendSuccess(() -> Component.literal("Vein Size set to " + veinSize + "."), true);
+        return 1;
+    }
+
+    private static int setLeafDecaySpeedMultiplier(CommandSourceStack source, int leafDecaySpeedMultiplier) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        config.leafDecaySpeedMultiplier = leafDecaySpeedMultiplier;
+        VeinMinerConfigManager.saveToDisk(source.getServer());
+        source.sendSuccess(() -> Component.literal("Leaf Decay Speed Multiplier set to " + leafDecaySpeedMultiplier + "x."), true);
         return 1;
     }
 
