@@ -24,3 +24,7 @@ exit $proc.ExitCode
 
 Proceed autonomously: edit files, run Gradle tasks, fix issues until done.
 If something is ambiguous, make a reasonable assumption and state it.
+
+todo:
+improve definition of done
+deep dive into performance of core vein mining logic (how much more can it be improved?)
