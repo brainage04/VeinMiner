@@ -21,7 +21,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ public final class VeinMiningHandler {
     private static final int INITIAL_DROPS_MAX_AGE_TICKS = 1;
     private static final int DEFERRED_DROPS_MAX_AGE_TICKS = 20;
     private static final double DEFERRED_MERGE_RADIUS = 2.0D;
+    private static final int RAPID_LEAF_DECAY_DISTANCE = 7;
 
     private static final Set<UUID> activelyVeinMiningPlayers = new HashSet<>();
     private static final List<PendingOriginMerge> pendingOriginMerges = new ArrayList<>();
@@ -80,7 +83,7 @@ public final class VeinMiningHandler {
 
         LongArrayList blocksToBreak = collectConnectedVein(level, originPos, originState, config, maxAdditionalBlocks);
         if (config.betterTreeVeinMining && originState.is(BlockTags.LOGS)) {
-            addAdjacentLeaves(level, originPos, originState.getBlock(), blocksToBreak, config, maxAdditionalBlocks);
+            addAdjacentLeaves(level, originPos, originState.getBlock(), blocksToBreak, maxAdditionalBlocks);
         }
 
         if (blocksToBreak.isEmpty()) {
@@ -159,11 +162,15 @@ public final class VeinMiningHandler {
             BlockPos originPos,
             Block originBlock,
             LongArrayList blocksToBreak,
-            VeinMinerConfig config,
             int maxAdditionalBlocks
     ) {
         String woodFamily = getWoodFamily(originBlock);
         if (woodFamily == null) {
+            return;
+        }
+
+        int maxLeavesToDecay = maxAdditionalBlocks - blocksToBreak.size();
+        if (maxLeavesToDecay <= 0) {
             return;
         }
 
@@ -177,19 +184,19 @@ public final class VeinMiningHandler {
         LongArrayFIFOQueue leafQueue = new LongArrayFIFOQueue();
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-        seedAdjacentLeaves(level, originPos.asLong(), woodFamily, config, blocksToBreak, selectedBlocks, visitedLeaves, leafQueue, mutablePos, maxAdditionalBlocks);
+        int decayedLeaves = seedAdjacentLeaves(level, originPos.asLong(), woodFamily, selectedBlocks, visitedLeaves, leafQueue, mutablePos, maxLeavesToDecay);
         for (long blockToBreak : blocksToBreak.toLongArray()) {
-            if (blocksToBreak.size() >= maxAdditionalBlocks) {
+            if (decayedLeaves >= maxLeavesToDecay) {
                 return;
             }
 
             BlockState state = level.getBlockState(BlockPos.of(blockToBreak));
             if (state.is(BlockTags.LOGS)) {
-                seedAdjacentLeaves(level, blockToBreak, woodFamily, config, blocksToBreak, selectedBlocks, visitedLeaves, leafQueue, mutablePos, maxAdditionalBlocks);
+                decayedLeaves += seedAdjacentLeaves(level, blockToBreak, woodFamily, selectedBlocks, visitedLeaves, leafQueue, mutablePos, maxLeavesToDecay - decayedLeaves);
             }
         }
 
-        while (!leafQueue.isEmpty() && blocksToBreak.size() < maxAdditionalBlocks) {
+        while (!leafQueue.isEmpty() && decayedLeaves < maxLeavesToDecay) {
             long current = leafQueue.dequeueLong();
             int x = BlockPos.getX(current);
             int y = BlockPos.getY(current);
@@ -217,15 +224,15 @@ public final class VeinMiningHandler {
                             selectedBlocks.remove(neighbor);
                             continue;
                         }
-                        if (!config.isBlockWhitelisted(neighborState.getBlock())) {
+                        if (!markLeafForRapidDecay(level, mutablePos, neighborState)) {
                             selectedBlocks.remove(neighbor);
                             continue;
                         }
 
-                        blocksToBreak.add(neighbor);
+                        decayedLeaves++;
                         leafQueue.enqueue(neighbor);
 
-                        if (blocksToBreak.size() >= maxAdditionalBlocks) {
+                        if (decayedLeaves >= maxLeavesToDecay) {
                             return;
                         }
                     }
@@ -234,22 +241,21 @@ public final class VeinMiningHandler {
         }
     }
 
-    private static void seedAdjacentLeaves(
+    private static int seedAdjacentLeaves(
             ServerLevel level,
             long logPos,
             String woodFamily,
-            VeinMinerConfig config,
-            LongArrayList blocksToBreak,
             LongOpenHashSet selectedBlocks,
             LongOpenHashSet visitedLeaves,
             LongArrayFIFOQueue leafQueue,
             BlockPos.MutableBlockPos mutablePos,
-            int maxAdditionalBlocks
+            int maxLeavesToDecay
     ) {
-        if (blocksToBreak.size() >= maxAdditionalBlocks) {
-            return;
+        if (maxLeavesToDecay <= 0) {
+            return 0;
         }
 
+        int decayedLeaves = 0;
         int x = BlockPos.getX(logPos);
         int y = BlockPos.getY(logPos);
         int z = BlockPos.getZ(logPos);
@@ -276,20 +282,43 @@ public final class VeinMiningHandler {
                         selectedBlocks.remove(neighbor);
                         continue;
                     }
-                    if (!config.isBlockWhitelisted(neighborState.getBlock())) {
+                    if (!markLeafForRapidDecay(level, mutablePos, neighborState)) {
                         selectedBlocks.remove(neighbor);
                         continue;
                     }
 
-                    blocksToBreak.add(neighbor);
+                    decayedLeaves++;
                     leafQueue.enqueue(neighbor);
 
-                    if (blocksToBreak.size() >= maxAdditionalBlocks) {
-                        return;
+                    if (decayedLeaves >= maxLeavesToDecay) {
+                        return decayedLeaves;
                     }
                 }
             }
         }
+
+        return decayedLeaves;
+    }
+
+    private static boolean markLeafForRapidDecay(ServerLevel level, BlockPos.MutableBlockPos leafPos, BlockState leafState) {
+        if (!(leafState.getBlock() instanceof LeavesBlock)) {
+            return false;
+        }
+
+        BlockState decayingState = leafState;
+        if (decayingState.hasProperty(BlockStateProperties.PERSISTENT) && decayingState.getValue(BlockStateProperties.PERSISTENT)) {
+            decayingState = decayingState.setValue(BlockStateProperties.PERSISTENT, false);
+        }
+        if (decayingState.hasProperty(BlockStateProperties.DISTANCE)
+                && decayingState.getValue(BlockStateProperties.DISTANCE) < RAPID_LEAF_DECAY_DISTANCE) {
+            decayingState = decayingState.setValue(BlockStateProperties.DISTANCE, RAPID_LEAF_DECAY_DISTANCE);
+        }
+
+        if (decayingState != leafState) {
+            level.setBlock(leafPos, decayingState, Block.UPDATE_ALL);
+        }
+        level.scheduleTick(leafPos, decayingState.getBlock(), 1);
+        return true;
     }
 
     private static void breakBlocksAndConsolidateDrops(
@@ -471,7 +500,7 @@ public final class VeinMiningHandler {
 
         Identifier firstId = BuiltInRegistries.BLOCK.getKey(first.getBlock());
         Identifier secondId = BuiltInRegistries.BLOCK.getKey(second.getBlock());
-        if (firstId == null || secondId == null) {
+        if (firstId == BuiltInRegistries.BLOCK.getDefaultKey() || secondId == BuiltInRegistries.BLOCK.getDefaultKey()) {
             return false;
         }
         if (!firstId.getNamespace().equals(secondId.getNamespace())) {
@@ -505,7 +534,7 @@ public final class VeinMiningHandler {
 
     private static String getWoodFamily(Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        if (blockId == null) {
+        if (blockId == BuiltInRegistries.BLOCK.getDefaultKey()) {
             return null;
         }
 

@@ -48,12 +48,12 @@
     },
     {
       "label": {
-        "text": "Set Vein Size 64"
+        "text": "Set Vein Size 128"
       },
       "width": 150,
       "action": {
         "type": "minecraft:run_command",
-        "command": "/veinminer vein_size 64"
+        "command": "/veinminer vein_size 128"
       }
     },
     {
