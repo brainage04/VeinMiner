@@ -1,26 +1,26 @@
 {
 	"schemaVersion": 1,
-	"id": "examplemod",
+	"id": "vein_miner",
 	"version": "${version}",
-	"name": "ExampleMod",
+	"name": "Vein Miner",
 	"description": "brainage04's mod template for server-side Fabric mods.",
 	"authors": [
 		"brainage04"
 	],
 	"contact": {
-		"homepage": "https://github.com/brainage04/ExampleMod",
-		"sources": "https://github.com/brainage04/ExampleMod"
+		"homepage": "https://github.com/brainage04/VeinMiner",
+		"sources": "https://github.com/brainage04/VeinMiner"
 	},
 	"license": "MIT",
-	"icon": "assets/examplemod/icon.png",
+	"icon": "assets/vein_miner/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.ExampleMod"
+			"com.github.brainage04.vein_miner.VeinMiner"
 		]
 	},
 	"mixins": [
-		"examplemod.mixins.json"
+		"vein_miner.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.18.2",
@@ -28,5 +28,5 @@
 		"java": ">=21",
 		"fabric-api": "*"
 	},
-    "accessWidener": "examplemod.accesswidener"
+    "accessWidener": "vein_miner.accesswidener"
 }
