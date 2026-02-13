@@ -5,28 +5,36 @@ import com.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public final class VeinMiningHandler {
+    private static final int INITIAL_DROPS_MAX_AGE_TICKS = 1;
+    private static final int DEFERRED_DROPS_MAX_AGE_TICKS = 20;
+    private static final double DEFERRED_MERGE_RADIUS = 2.0D;
+
     private static final Set<UUID> activelyVeinMiningPlayers = new HashSet<>();
+    private static final List<PendingOriginMerge> pendingOriginMerges = new ArrayList<>();
 
     private VeinMiningHandler() {
     }
@@ -39,6 +47,7 @@ public final class VeinMiningHandler {
 
             onBlockBroken(serverLevel, serverPlayer, pos, state);
         });
+        ServerTickEvents.END_SERVER_TICK.register(VeinMiningHandler::tick);
     }
 
     private static void onBlockBroken(ServerLevel level, ServerPlayer player, BlockPos originPos, BlockState originState) {
@@ -67,9 +76,6 @@ public final class VeinMiningHandler {
         }
 
         LongArrayList blocksToBreak = collectConnectedVein(level, originPos, originState, config, maxAdditionalBlocks);
-        if (config.betterTreeVeinMining && originState.is(BlockTags.LOGS)) {
-            addAdjacentLeaves(level, originPos, originState.getBlock(), blocksToBreak, config, maxAdditionalBlocks);
-        }
 
         if (blocksToBreak.isEmpty()) {
             return;
@@ -142,144 +148,6 @@ public final class VeinMiningHandler {
         return result;
     }
 
-    private static void addAdjacentLeaves(
-            ServerLevel level,
-            BlockPos originPos,
-            Block originBlock,
-            LongArrayList blocksToBreak,
-            VeinMinerConfig config,
-            int maxAdditionalBlocks
-    ) {
-        String woodFamily = getWoodFamily(originBlock);
-        if (woodFamily == null) {
-            return;
-        }
-
-        LongOpenHashSet selectedBlocks = new LongOpenHashSet(blocksToBreak.size() + 1);
-        selectedBlocks.add(originPos.asLong());
-        for (long value : blocksToBreak) {
-            selectedBlocks.add(value);
-        }
-
-        LongOpenHashSet visitedLeaves = new LongOpenHashSet();
-        LongArrayFIFOQueue leafQueue = new LongArrayFIFOQueue();
-        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
-
-        seedAdjacentLeaves(level, originPos.asLong(), woodFamily, config, blocksToBreak, selectedBlocks, visitedLeaves, leafQueue, mutablePos, maxAdditionalBlocks);
-        for (long blockToBreak : blocksToBreak.toLongArray()) {
-            if (blocksToBreak.size() >= maxAdditionalBlocks) {
-                return;
-            }
-
-            BlockState state = level.getBlockState(BlockPos.of(blockToBreak));
-            if (state.is(BlockTags.LOGS)) {
-                seedAdjacentLeaves(level, blockToBreak, woodFamily, config, blocksToBreak, selectedBlocks, visitedLeaves, leafQueue, mutablePos, maxAdditionalBlocks);
-            }
-        }
-
-        while (!leafQueue.isEmpty() && blocksToBreak.size() < maxAdditionalBlocks) {
-            long current = leafQueue.dequeueLong();
-            int x = BlockPos.getX(current);
-            int y = BlockPos.getY(current);
-            int z = BlockPos.getZ(current);
-
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dy == 0 && dz == 0) {
-                            continue;
-                        }
-
-                        int neighborX = x + dx;
-                        int neighborY = y + dy;
-                        int neighborZ = z + dz;
-                        long neighbor = BlockPos.asLong(neighborX, neighborY, neighborZ);
-
-                        if (!visitedLeaves.add(neighbor) || !selectedBlocks.add(neighbor)) {
-                            continue;
-                        }
-
-                        mutablePos.set(neighborX, neighborY, neighborZ);
-                        BlockState neighborState = level.getBlockState(mutablePos);
-                        if (!isSameFamilyLeaf(neighborState, woodFamily)) {
-                            selectedBlocks.remove(neighbor);
-                            continue;
-                        }
-                        if (!config.isBlockWhitelisted(neighborState.getBlock())) {
-                            selectedBlocks.remove(neighbor);
-                            continue;
-                        }
-
-                        blocksToBreak.add(neighbor);
-                        leafQueue.enqueue(neighbor);
-
-                        if (blocksToBreak.size() >= maxAdditionalBlocks) {
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private static void seedAdjacentLeaves(
-            ServerLevel level,
-            long logPos,
-            String woodFamily,
-            VeinMinerConfig config,
-            LongArrayList blocksToBreak,
-            LongOpenHashSet selectedBlocks,
-            LongOpenHashSet visitedLeaves,
-            LongArrayFIFOQueue leafQueue,
-            BlockPos.MutableBlockPos mutablePos,
-            int maxAdditionalBlocks
-    ) {
-        if (blocksToBreak.size() >= maxAdditionalBlocks) {
-            return;
-        }
-
-        int x = BlockPos.getX(logPos);
-        int y = BlockPos.getY(logPos);
-        int z = BlockPos.getZ(logPos);
-
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                for (int dz = -1; dz <= 1; dz++) {
-                    if (dx == 0 && dy == 0 && dz == 0) {
-                        continue;
-                    }
-
-                    int neighborX = x + dx;
-                    int neighborY = y + dy;
-                    int neighborZ = z + dz;
-                    long neighbor = BlockPos.asLong(neighborX, neighborY, neighborZ);
-
-                    if (!visitedLeaves.add(neighbor) || !selectedBlocks.add(neighbor)) {
-                        continue;
-                    }
-
-                    mutablePos.set(neighborX, neighborY, neighborZ);
-                    BlockState neighborState = level.getBlockState(mutablePos);
-                    if (!isSameFamilyLeaf(neighborState, woodFamily)) {
-                        selectedBlocks.remove(neighbor);
-                        continue;
-                    }
-                    if (!config.isBlockWhitelisted(neighborState.getBlock())) {
-                        selectedBlocks.remove(neighbor);
-                        continue;
-                    }
-
-                    blocksToBreak.add(neighbor);
-                    leafQueue.enqueue(neighbor);
-
-                    if (blocksToBreak.size() >= maxAdditionalBlocks) {
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
     private static void breakBlocksAndConsolidateDrops(
             ServerLevel level,
             ServerPlayer player,
@@ -321,8 +189,13 @@ public final class VeinMiningHandler {
         }
 
         AABB searchBounds = new AABB(minX, minY, minZ, maxX + 1.0D, maxY + 1.0D, maxZ + 1.0D).inflate(2.5D);
-        List<ItemEntity> droppedItems = level.getEntitiesOfClass(ItemEntity.class, searchBounds, item -> item.isAlive() && item.getAge() <= 1);
+        List<ItemEntity> droppedItems = level.getEntitiesOfClass(
+                ItemEntity.class,
+                searchBounds,
+                item -> item.isAlive() && item.getAge() <= INITIAL_DROPS_MAX_AGE_TICKS
+        );
         if (droppedItems.isEmpty()) {
+            queueDeferredMerge(level, originPos);
             return;
         }
 
@@ -335,6 +208,63 @@ public final class VeinMiningHandler {
         }
 
         mergeItemsInPlace(droppedItems);
+        queueDeferredMerge(level, originPos);
+    }
+
+    private static void tick(MinecraftServer server) {
+        if (pendingOriginMerges.isEmpty()) {
+            return;
+        }
+
+        int currentTick = server.getTickCount();
+        Iterator<PendingOriginMerge> iterator = pendingOriginMerges.iterator();
+        while (iterator.hasNext()) {
+            PendingOriginMerge pendingMerge = iterator.next();
+            if (pendingMerge.executeAtTick > currentTick) {
+                continue;
+            }
+
+            ServerLevel level = server.getLevel(pendingMerge.dimension);
+            if (level != null) {
+                runDeferredOriginMerge(level, pendingMerge.originPos);
+            }
+
+            iterator.remove();
+        }
+    }
+
+    private static void queueDeferredMerge(ServerLevel level, BlockPos originPos) {
+        pendingOriginMerges.add(new PendingOriginMerge(level.dimension(), originPos.immutable(), level.getServer().getTickCount()));
+    }
+
+    private static void runDeferredOriginMerge(ServerLevel level, BlockPos originPos) {
+        double originX = originPos.getX() + 0.5D;
+        double originY = originPos.getY() + 0.5D;
+        double originZ = originPos.getZ() + 0.5D;
+        AABB searchBounds = new AABB(
+                originX - DEFERRED_MERGE_RADIUS,
+                originY - DEFERRED_MERGE_RADIUS,
+                originZ - DEFERRED_MERGE_RADIUS,
+                originX + DEFERRED_MERGE_RADIUS,
+                originY + DEFERRED_MERGE_RADIUS,
+                originZ + DEFERRED_MERGE_RADIUS
+        );
+
+        List<ItemEntity> nearbyDrops = level.getEntitiesOfClass(
+                ItemEntity.class,
+                searchBounds,
+                item -> item.isAlive() && item.getAge() <= DEFERRED_DROPS_MAX_AGE_TICKS
+        );
+        if (nearbyDrops.isEmpty()) {
+            return;
+        }
+
+        for (ItemEntity nearbyDrop : nearbyDrops) {
+            nearbyDrop.setPos(originX, originY, originZ);
+            nearbyDrop.setDeltaMovement(0.0D, 0.0D, 0.0D);
+        }
+
+        mergeItemsInPlace(nearbyDrops);
     }
 
     private static void mergeItemsInPlace(List<ItemEntity> itemEntities) {
@@ -397,7 +327,7 @@ public final class VeinMiningHandler {
 
         Identifier firstId = BuiltInRegistries.BLOCK.getKey(first.getBlock());
         Identifier secondId = BuiltInRegistries.BLOCK.getKey(second.getBlock());
-        if (firstId == null || secondId == null) {
+        if (firstId == BuiltInRegistries.BLOCK.getDefaultKey() || secondId == BuiltInRegistries.BLOCK.getDefaultKey()) {
             return false;
         }
         if (!firstId.getNamespace().equals(secondId.getNamespace())) {
@@ -415,52 +345,6 @@ public final class VeinMiningHandler {
         return path;
     }
 
-    private static boolean isSameFamilyLeaf(BlockState state, String woodFamily) {
-        if (state.isAir()) {
-            return false;
-        }
-
-        Block block = state.getBlock();
-        if (!(state.is(BlockTags.LEAVES) || block == Blocks.NETHER_WART_BLOCK || block == Blocks.WARPED_WART_BLOCK)) {
-            return false;
-        }
-
-        String leafFamily = getWoodFamily(block);
-        return woodFamily.equals(leafFamily);
-    }
-
-    private static String getWoodFamily(Block block) {
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        if (blockId == null) {
-            return null;
-        }
-
-        String namespace = blockId.getNamespace();
-        String path = blockId.getPath();
-
-        if ("nether_wart_block".equals(path)) {
-            return namespace + ":crimson";
-        }
-        if ("warped_wart_block".equals(path)) {
-            return namespace + ":warped";
-        }
-
-        if (path.endsWith("_log")) {
-            return namespace + ":" + path.substring(0, path.length() - "_log".length());
-        }
-        if (path.endsWith("_wood")) {
-            return namespace + ":" + path.substring(0, path.length() - "_wood".length());
-        }
-        if (path.endsWith("_stem")) {
-            return namespace + ":" + path.substring(0, path.length() - "_stem".length());
-        }
-        if (path.endsWith("_hyphae")) {
-            return namespace + ":" + path.substring(0, path.length() - "_hyphae".length());
-        }
-        if (path.endsWith("_leaves")) {
-            return namespace + ":" + path.substring(0, path.length() - "_leaves".length());
-        }
-
-        return null;
+    private record PendingOriginMerge(ResourceKey<Level> dimension, BlockPos originPos, int executeAtTick) {
     }
 }

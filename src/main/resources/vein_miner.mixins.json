@@ -3,7 +3,7 @@
 	"package": "com.github.brainage04.vein_miner.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"LeavesBlockDecayMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
