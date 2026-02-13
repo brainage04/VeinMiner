@@ -5,14 +5,10 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class VeinMinerConfig {
-    public static final int DEFAULT_VEIN_SIZE = 64;
+    public static final int DEFAULT_VEIN_SIZE = 128;
 
     public boolean enableVeinMining;
     public int veinSize;
@@ -46,17 +42,17 @@ public class VeinMinerConfig {
 
     public boolean isBlockWhitelisted(Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != null && this.whitelist.contains(blockId.toString());
+        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && this.whitelist.contains(blockId.toString());
     }
 
     public boolean addBlockToWhitelist(Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != null && this.whitelist.add(blockId.toString());
+        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && this.whitelist.add(blockId.toString());
     }
 
     public boolean removeBlockFromWhitelist(Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != null && this.whitelist.remove(blockId.toString());
+        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && this.whitelist.remove(blockId.toString());
     }
 
     public List<String> whitelistAsSortedList() {
@@ -70,7 +66,7 @@ public class VeinMinerConfig {
 
         for (Block block : defaultWhitelistBlocks()) {
             Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-            if (blockId != null) {
+            if (blockId != BuiltInRegistries.BLOCK.getDefaultKey()) {
                 defaults.add(blockId.toString());
             }
         }
@@ -88,9 +84,7 @@ public class VeinMinerConfig {
                 Blocks.EMERALD_ORE,
                 Blocks.LAPIS_ORE,
                 Blocks.REDSTONE_ORE,
-                Blocks.NETHER_QUARTZ_ORE,
-                Blocks.NETHER_GOLD_ORE,
-                Blocks.ANCIENT_DEBRIS,
+
                 Blocks.DEEPSLATE_COAL_ORE,
                 Blocks.DEEPSLATE_IRON_ORE,
                 Blocks.DEEPSLATE_GOLD_ORE,
@@ -99,6 +93,11 @@ public class VeinMinerConfig {
                 Blocks.DEEPSLATE_EMERALD_ORE,
                 Blocks.DEEPSLATE_LAPIS_ORE,
                 Blocks.DEEPSLATE_REDSTONE_ORE,
+
+                Blocks.NETHER_QUARTZ_ORE,
+                Blocks.NETHER_GOLD_ORE,
+                Blocks.ANCIENT_DEBRIS,
+
                 Blocks.OAK_LOG,
                 Blocks.SPRUCE_LOG,
                 Blocks.BIRCH_LOG,
@@ -108,21 +107,9 @@ public class VeinMinerConfig {
                 Blocks.PALE_OAK_LOG,
                 Blocks.MANGROVE_LOG,
                 Blocks.CHERRY_LOG,
+
                 Blocks.CRIMSON_STEM,
-                Blocks.WARPED_STEM,
-                Blocks.OAK_LEAVES,
-                Blocks.SPRUCE_LEAVES,
-                Blocks.BIRCH_LEAVES,
-                Blocks.JUNGLE_LEAVES,
-                Blocks.ACACIA_LEAVES,
-                Blocks.DARK_OAK_LEAVES,
-                Blocks.PALE_OAK_LEAVES,
-                Blocks.MANGROVE_LEAVES,
-                Blocks.CHERRY_LEAVES,
-                Blocks.AZALEA_LEAVES,
-                Blocks.FLOWERING_AZALEA_LEAVES,
-                Blocks.NETHER_WART_BLOCK,
-                Blocks.WARPED_WART_BLOCK
+                Blocks.WARPED_STEM
         ));
     }
 }

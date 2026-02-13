@@ -5,28 +5,39 @@ import com.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public final class VeinMiningHandler {
+    private static final int INITIAL_DROPS_MAX_AGE_TICKS = 1;
+    private static final int DEFERRED_DROPS_MAX_AGE_TICKS = 20;
+    private static final double DEFERRED_MERGE_RADIUS = 2.0D;
+
     private static final Set<UUID> activelyVeinMiningPlayers = new HashSet<>();
+    private static final List<PendingOriginMerge> pendingOriginMerges = new ArrayList<>();
 
     private VeinMiningHandler() {
     }
@@ -39,6 +50,7 @@ public final class VeinMiningHandler {
 
             onBlockBroken(serverLevel, serverPlayer, pos, state);
         });
+        ServerTickEvents.END_SERVER_TICK.register(VeinMiningHandler::tick);
     }
 
     private static void onBlockBroken(ServerLevel level, ServerPlayer player, BlockPos originPos, BlockState originState) {
@@ -321,8 +333,13 @@ public final class VeinMiningHandler {
         }
 
         AABB searchBounds = new AABB(minX, minY, minZ, maxX + 1.0D, maxY + 1.0D, maxZ + 1.0D).inflate(2.5D);
-        List<ItemEntity> droppedItems = level.getEntitiesOfClass(ItemEntity.class, searchBounds, item -> item.isAlive() && item.getAge() <= 1);
+        List<ItemEntity> droppedItems = level.getEntitiesOfClass(
+                ItemEntity.class,
+                searchBounds,
+                item -> item.isAlive() && item.getAge() <= INITIAL_DROPS_MAX_AGE_TICKS
+        );
         if (droppedItems.isEmpty()) {
+            queueDeferredMerge(level, originPos);
             return;
         }
 
@@ -335,6 +352,63 @@ public final class VeinMiningHandler {
         }
 
         mergeItemsInPlace(droppedItems);
+        queueDeferredMerge(level, originPos);
+    }
+
+    private static void tick(MinecraftServer server) {
+        if (pendingOriginMerges.isEmpty()) {
+            return;
+        }
+
+        int currentTick = server.getTickCount();
+        Iterator<PendingOriginMerge> iterator = pendingOriginMerges.iterator();
+        while (iterator.hasNext()) {
+            PendingOriginMerge pendingMerge = iterator.next();
+            if (pendingMerge.executeAtTick > currentTick) {
+                continue;
+            }
+
+            ServerLevel level = server.getLevel(pendingMerge.dimension);
+            if (level != null) {
+                runDeferredOriginMerge(level, pendingMerge.originPos);
+            }
+
+            iterator.remove();
+        }
+    }
+
+    private static void queueDeferredMerge(ServerLevel level, BlockPos originPos) {
+        pendingOriginMerges.add(new PendingOriginMerge(level.dimension(), originPos.immutable(), level.getServer().getTickCount()));
+    }
+
+    private static void runDeferredOriginMerge(ServerLevel level, BlockPos originPos) {
+        double originX = originPos.getX() + 0.5D;
+        double originY = originPos.getY() + 0.5D;
+        double originZ = originPos.getZ() + 0.5D;
+        AABB searchBounds = new AABB(
+                originX - DEFERRED_MERGE_RADIUS,
+                originY - DEFERRED_MERGE_RADIUS,
+                originZ - DEFERRED_MERGE_RADIUS,
+                originX + DEFERRED_MERGE_RADIUS,
+                originY + DEFERRED_MERGE_RADIUS,
+                originZ + DEFERRED_MERGE_RADIUS
+        );
+
+        List<ItemEntity> nearbyDrops = level.getEntitiesOfClass(
+                ItemEntity.class,
+                searchBounds,
+                item -> item.isAlive() && item.getAge() <= DEFERRED_DROPS_MAX_AGE_TICKS
+        );
+        if (nearbyDrops.isEmpty()) {
+            return;
+        }
+
+        for (ItemEntity nearbyDrop : nearbyDrops) {
+            nearbyDrop.setPos(originX, originY, originZ);
+            nearbyDrop.setDeltaMovement(0.0D, 0.0D, 0.0D);
+        }
+
+        mergeItemsInPlace(nearbyDrops);
     }
 
     private static void mergeItemsInPlace(List<ItemEntity> itemEntities) {
@@ -462,5 +536,8 @@ public final class VeinMiningHandler {
         }
 
         return null;
+    }
+
+    private record PendingOriginMerge(ResourceKey<Level> dimension, BlockPos originPos, int executeAtTick) {
     }
 }
