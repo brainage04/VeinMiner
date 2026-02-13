@@ -54,7 +54,14 @@ Constraints:
 
 Definition of done:
 - `./gradlew build` passes
-- The mod launches and exits gracefully in dev client (`timeout 1m ./gradlew runClient --no-daemon`)
+- The mod launches and exits gracefully in dev client. Use the following commands on the following OSes:
+Linux/macOS: `timeout 1m ./gradlew runClient --no-daemon`
+Windows:
+```powershell
+$proc = Start-Process -PassThru -NoNewWindow -FilePath ".\gradlew.bat" -ArgumentList "runClient","--no-daemon"
+if (-not $proc.WaitForExit(60000)) { $proc.Kill($true) }
+exit $proc.ExitCode
+```
 - Briefly summarize what you changed and where.
 
 Proceed autonomously: edit files, run Gradle tasks, fix issues until done.
