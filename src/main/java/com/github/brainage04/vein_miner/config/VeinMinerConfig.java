@@ -9,11 +9,13 @@ import java.util.*;
 
 public class VeinMinerConfig {
     public static final int DEFAULT_VEIN_SIZE = 128;
+    public static final int DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER = 100;
 
     public boolean enableVeinMining;
     public int veinSize;
     public boolean betterOreVeinMining;
     public boolean betterTreeVeinMining;
+    public int leafDecaySpeedMultiplier;
     public LinkedHashSet<String> whitelist;
 
     public VeinMinerConfig() {
@@ -21,6 +23,7 @@ public class VeinMinerConfig {
         this.veinSize = DEFAULT_VEIN_SIZE;
         this.betterOreVeinMining = true;
         this.betterTreeVeinMining = true;
+        this.leafDecaySpeedMultiplier = DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER;
         this.whitelist = defaultWhitelist();
     }
 
@@ -31,6 +34,9 @@ public class VeinMinerConfig {
     public void normalize() {
         if (this.veinSize < 1) {
             this.veinSize = DEFAULT_VEIN_SIZE;
+        }
+        if (this.leafDecaySpeedMultiplier < 1) {
+            this.leafDecaySpeedMultiplier = DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER;
         }
 
         if (this.whitelist == null) {
