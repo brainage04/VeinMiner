@@ -54,7 +54,7 @@ Constraints:
 
 Definition of done:
 - `./gradlew build` passes
-- The mod launches in dev client (`./gradlew runClient`)
+- The mod launches and exits gracefully in dev client (`timeout 1m ./gradlew runClient --no-daemon`)
 - Briefly summarize what you changed and where.
 
 Proceed autonomously: edit files, run Gradle tasks, fix issues until done.
