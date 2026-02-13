@@ -1,12 +1,12 @@
 package com.github.brainage04.vein_miner.command.core;
 
-import com.github.brainage04.vein_miner.command.ExampleCommand;
+import com.github.brainage04.vein_miner.command.VeinMinerCommand;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 public class ModCommands {
     public static void initialize() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            ExampleCommand.initialize(dispatcher);
+            VeinMinerCommand.initialize(dispatcher, registryAccess);
         });
     }
 }
