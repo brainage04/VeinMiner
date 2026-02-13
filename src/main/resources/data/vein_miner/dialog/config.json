@@ -1,0 +1,107 @@
+{
+  "type": "minecraft:multi_action",
+  "title": {
+    "text": "VeinMiner Config"
+  },
+  "external_title": {
+    "text": "VeinMiner Config"
+  },
+  "body": [
+    {
+      "type": "minecraft:plain_message",
+      "contents": {
+        "text": "Run VeinMiner admin actions directly from this dialog."
+      },
+      "width": 310
+    }
+  ],
+  "actions": [
+    {
+      "label": {
+        "text": "Toggle Vein Mining"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer toggle"
+      }
+    },
+    {
+      "label": {
+        "text": "Toggle Better Ore"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer better_ore_vein_mining toggle"
+      }
+    },
+    {
+      "label": {
+        "text": "Toggle Better Tree"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer better_tree_vein_mining toggle"
+      }
+    },
+    {
+      "label": {
+        "text": "Set Vein Size 64"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer vein_size 64"
+      }
+    },
+    {
+      "label": {
+        "text": "Whitelist List"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer whitelist list"
+      }
+    },
+    {
+      "label": {
+        "text": "Whitelist Clear"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer whitelist clear"
+      }
+    },
+    {
+      "label": {
+        "text": "Reload from Disk"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer load_from_disk"
+      }
+    },
+    {
+      "label": {
+        "text": "Show Status"
+      },
+      "width": 150,
+      "action": {
+        "type": "minecraft:dynamic/run_command",
+        "template": "/veinminer"
+      }
+    }
+  ],
+  "columns": 2,
+  "exit_action": {
+    "label": {
+      "translate": "gui.done"
+    },
+    "width": 200
+  }
+}
