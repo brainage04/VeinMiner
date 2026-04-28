@@ -1,6 +1,6 @@
-package com.github.brainage04.vein_miner.command.core;
+package io.github.brainage04.vein_miner.command.core;
 
-import com.github.brainage04.vein_miner.command.VeinMinerCommand;
+import io.github.brainage04.vein_miner.command.VeinMinerCommand;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 
 public class ModCommands {

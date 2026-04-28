@@ -1,6 +1,6 @@
-package com.github.brainage04.vein_miner.config;
+package io.github.brainage04.vein_miner.config;
 
-import com.github.brainage04.vein_miner.VeinMiner;
+import io.github.brainage04.vein_miner.VeinMiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;

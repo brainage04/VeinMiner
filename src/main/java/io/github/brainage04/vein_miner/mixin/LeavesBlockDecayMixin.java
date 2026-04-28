@@ -1,6 +1,6 @@
-package com.github.brainage04.vein_miner.mixin;
+package io.github.brainage04.vein_miner.mixin;
 
-import com.github.brainage04.vein_miner.leaf.LeafDecayRateHandler;
+import io.github.brainage04.vein_miner.leaf.LeafDecayRateHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;

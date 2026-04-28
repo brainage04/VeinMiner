@@ -1,7 +1,7 @@
-package com.github.brainage04.vein_miner.leaf;
+package io.github.brainage04.vein_miner.leaf;
 
-import com.github.brainage04.vein_miner.config.VeinMinerConfig;
-import com.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import io.github.brainage04.vein_miner.config.VeinMinerConfig;
+import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;

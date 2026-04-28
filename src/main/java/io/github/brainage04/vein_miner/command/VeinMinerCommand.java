@@ -1,7 +1,7 @@
-package com.github.brainage04.vein_miner.command;
+package io.github.brainage04.vein_miner.command;
 
-import com.github.brainage04.vein_miner.config.VeinMinerConfig;
-import com.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import io.github.brainage04.vein_miner.config.VeinMinerConfig;
+import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;

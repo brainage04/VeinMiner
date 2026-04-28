@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "vein_miner",
-	"version": "${version}",
-	"name": "Vein Miner",
-	"description": "brainage04's mod template for server-side Fabric mods.",
+	"id": "${mod_id}",
+	"version": "${mod_version}",
+	"name": "${mod_name}",
+	"description": "A server-side Fabric mod for mining connected veins of blocks.",
 	"authors": [
 		"brainage04"
 	],
@@ -16,17 +16,17 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.github.brainage04.vein_miner.VeinMiner"
+			"io.github.brainage04.vein_miner.VeinMiner"
 		]
 	},
 	"mixins": [
 		"vein_miner.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.18.2",
-		"minecraft": "~1.21.11",
-		"java": ">=21",
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=${java_version}",
 		"fabric-api": "*"
 	},
-    "accessWidener": "vein_miner.accesswidener"
+	"accessWidener": "vein_miner.accesswidener"
 }
