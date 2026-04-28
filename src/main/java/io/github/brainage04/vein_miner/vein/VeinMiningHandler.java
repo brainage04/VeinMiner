@@ -1,7 +1,7 @@
-package com.github.brainage04.vein_miner.vein;
+package io.github.brainage04.vein_miner.vein;
 
-import com.github.brainage04.vein_miner.config.VeinMinerConfig;
-import com.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import io.github.brainage04.vein_miner.config.VeinMinerConfig;
+import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;

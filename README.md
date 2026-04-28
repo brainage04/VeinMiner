@@ -1,19 +1,22 @@
-# About
-My template for Minecraft Fabric server-side mods. The easiest way to use this is to click `Use this template` and GitHub Actions will take care of the rest for you.
+# Vein Miner
 
-However, if you are using a Linux-based operating system, it is possible to clone this repository, and perform a refactor by triggering the `init.sh` script like so:
-```shell
-./init.sh <owner> <mod_name> 
-```
+Vein Miner is a server-side Fabric mod that mines connected veins of whitelisted blocks when a player breaks a block while sneaking.
 
-Where `<owner>` is your GitHub username and `<mod_name>` is your GitHub repository name/mod name.
+## Configuration
 
-This script is designed to work both with GitHub Actions and manual usage, and will safely delete:
-  - Leftover unused folders that are not tracked by Git (src/main/java/com/example and src/main/resources/examplemod).
-  - The `init` workflow and script after successful execution.
+Server configuration is written to `config/vein_miner.json` after the server starts.
 
-# Credits
-Thank you to [nea89o](https://github.com/nea89o)
-for developing the GitHub Actions [workflow](https://github.com/nea89o/Forge1.8.9Template/blob/master/.github/workflows/init.yml)
-and [script](https://github.com/nea89o/Forge1.8.9Template/blob/master/make-my-own.sh)
-from which I based my workflow and script off of.
+Operators can manage the config in game with `/veinminer`:
+
+- `/veinminer toggle`
+- `/veinminer vein_size <amount>`
+- `/veinminer leaf_decay_speed_multiplier <amount>`
+- `/veinminer whitelist add <block>`
+- `/veinminer whitelist remove <block>`
+- `/veinminer whitelist list`
+- `/veinminer load_from_disk`
+
+## Releases
+
+Releases are created from annotated tags named `vX.Y.Z`.
+The tag message becomes the GitHub release body and the Modrinth changelog.

@@ -1,4 +1,4 @@
-package com.github.brainage04.vein_miner.config;
+package io.github.brainage04.vein_miner.config;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;

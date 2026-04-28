@@ -1,7 +1,7 @@
 {
 	"required": true,
-	"package": "com.github.brainage04.vein_miner.mixin",
-	"compatibilityLevel": "JAVA_21",
+	"package": "io.github.brainage04.vein_miner.mixin",
+	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"LeavesBlockDecayMixin"
 	],
