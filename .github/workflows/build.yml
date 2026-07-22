@@ -11,9 +11,9 @@ permissions:
 
 jobs:
   build:
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-mod-build.yml@v2.3.1
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-mod-build.yml@v2.3.0
     with:
       check_scripts: true
 
   production-gametests:
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-production-gametests.yml@v2.3.1
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-production-gametests.yml@v2.3.0
