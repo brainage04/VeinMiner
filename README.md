@@ -16,6 +16,12 @@ Operators can manage the config in game with `/veinminer`:
 - `/veinminer whitelist list`
 - `/veinminer load_from_disk`
 
+## Telekinesis compatibility
+
+When [Telekinesis](https://github.com/brainage04/Telekinesis) is installed, drops from both the original block and every connected block mined by Vein Miner go directly into the breaking player's inventory.
+Normal loot-table behavior is preserved, and any overflow still spawns in the world.
+Vein Miner continues to work normally when Telekinesis is absent.
+
 ## Releases
 
 Releases are created from annotated tags named `vX.Y.Z`.

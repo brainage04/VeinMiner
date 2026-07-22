@@ -28,5 +28,7 @@
 		"java": ">=${java_version}",
 		"fabric-api": "*"
 	},
-	"accessWidener": "vein_miner.accesswidener"
+	"suggests": {
+		"telekinesis": "*"
+	}
 }

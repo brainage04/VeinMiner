@@ -16,7 +16,9 @@ Create a Modrinth personal access token and add it as a repository secret to the
 Minimum useful scopes:
 
 - `PROJECT_CREATE`
+- `PROJECT_READ`
 - `PROJECT_WRITE`
+- `VERSION_READ`
 - `VERSION_CREATE`
 
 The release workflow uses the Modrinth API directly:
@@ -30,6 +32,7 @@ The workflow reads:
 
 - `src/main/resources/fabric.mod.json` for the project slug, title, description, contact links, licence, and side support inference
 - `README.md` for the long project description
+- The GitHub repository description for the Modrinth project summary
 - `.modrinth/project.json` for optional Modrinth-specific overrides
 - `gradle.properties` for `mod_version` and `minecraft_version`
 
@@ -44,7 +47,8 @@ Defaults:
 - `fabric` is used as the default loader for versions when no override is supplied
 - `utility` is used as the default project category when no override is supplied
 - `discord_url` is always set to `https://discord.gg/N4zfhBx8Fm`
-- The workflow syncs `issues_url`, `source_url`, `wiki_url`, and `license_url` on every release so existing Modrinth projects stay aligned with the repository
+- The workflow syncs the project summary, long description, `issues_url`, `source_url`, `wiki_url`, and `license_url` on every release so existing Modrinth projects stay aligned with the repository
+- Existing Modrinth project icons are only replaced when the current Modrinth icon URL does not already contain the SHA-1 of the local icon file
 
 In practice, `.modrinth/project.json` can be kept very small. This file is only needed when you want to override defaults such as:
 
@@ -144,6 +148,6 @@ The release workflow fetches the remote tag object before reading notes so annot
 ## Notes
 
 - The workflow uploads the main release jar from `build/libs` and ignores `*-dev.jar` and `*-sources.jar`.
-- If the Modrinth project already exists, it is reused instead of recreated.
+- If the Modrinth project already exists, it is reused instead of recreated. When a project is newly created, the separate icon sync step is skipped for that release because the create request already uploads the icon.
+- If an existing Modrinth project icon must change and Modrinth rejects the icon replacement, the workflow still publishes the Modrinth version, then fails the job at the end so the stale icon remains visible.
 - If the Modrinth version already exists for the current `mod_version`, publishing is skipped.
-- The Modrinth scripts can also be run locally for validation. When they run outside GitHub Actions, `GITHUB_ENV` is optional and no step output file is written.
