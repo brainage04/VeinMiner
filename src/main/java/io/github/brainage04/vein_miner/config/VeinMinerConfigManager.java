@@ -1,91 +1,119 @@
 package io.github.brainage04.vein_miner.config;
 
-import io.github.brainage04.vein_miner.VeinMiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.server.MinecraftServer;
+import com.google.gson.JsonParser;
+import io.github.brainage04.vein_miner.VeinMiner;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 public final class VeinMinerConfigManager {
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final String CONFIG_FILE = "config/vein_miner.json";
-
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("vein_miner.json");
     private static VeinMinerConfig config = VeinMinerConfig.createDefault();
-    private static Path configPath;
 
     private VeinMinerConfigManager() {
     }
 
-    public static void initialize() {
-        ServerLifecycleEvents.SERVER_STARTED.register(VeinMinerConfigManager::onServerStarted);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            config = VeinMinerConfig.createDefault();
-            configPath = null;
-        });
+    public static synchronized void initialize() {
+        if (!Files.exists(CONFIG_PATH)) {
+            saveToDisk();
+            return;
+        }
+        reloadFromDisk();
     }
 
-    public static VeinMinerConfig getConfig() {
+    public static synchronized VeinMinerConfig getConfig() {
         return config;
     }
 
-    public static void saveToDisk(MinecraftServer server) {
-        ensureConfigPath(server);
-
+    public static synchronized boolean saveToDisk() {
+        Path temporaryPath = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".tmp");
         try {
-            Files.createDirectories(configPath.getParent());
-
-            try (Writer writer = Files.newBufferedWriter(configPath, StandardCharsets.UTF_8)) {
+            Files.createDirectories(CONFIG_PATH.getParent());
+            try (Writer writer = Files.newBufferedWriter(temporaryPath)) {
                 GSON.toJson(config, writer);
             }
+            moveAtomically(temporaryPath, CONFIG_PATH);
+            return true;
         } catch (IOException exception) {
-            VeinMiner.LOGGER.error("Failed to save VeinMiner config to {}", configPath, exception);
-        }
-    }
-
-    public static boolean reloadFromDisk(MinecraftServer server) {
-        ensureConfigPath(server);
-
-        if (Files.notExists(configPath)) {
-            saveToDisk(server);
-            return true;
-        }
-
-        try (Reader reader = Files.newBufferedReader(configPath, StandardCharsets.UTF_8)) {
-            VeinMinerConfig loadedConfig = GSON.fromJson(reader, VeinMinerConfig.class);
-
-            if (loadedConfig == null) {
-                VeinMiner.LOGGER.warn("VeinMiner config file was empty; preserving current config.");
-                return false;
+            VeinMiner.LOGGER.error("Failed to save Vein Miner config to {}", CONFIG_PATH, exception);
+            try {
+                Files.deleteIfExists(temporaryPath);
+            } catch (IOException cleanupException) {
+                exception.addSuppressed(cleanupException);
             }
-
-            loadedConfig.normalize();
-            config = loadedConfig;
-            return true;
-        } catch (IOException | JsonParseException exception) {
-            VeinMiner.LOGGER.error("Failed to load VeinMiner config from {}", configPath, exception);
             return false;
         }
     }
 
-    private static void onServerStarted(MinecraftServer server) {
-        ensureConfigPath(server);
+    public static synchronized boolean reloadFromDisk() {
+        if (!Files.exists(CONFIG_PATH)) {
+            config = VeinMinerConfig.createDefault();
+            return saveToDisk();
+        }
 
-        if (!reloadFromDisk(server)) {
-            saveToDisk(server);
+        try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
+            JsonObject document = JsonParser.parseReader(reader).getAsJsonObject();
+            VeinMinerConfig loadedConfig = GSON.fromJson(document, VeinMinerConfig.class);
+            if (loadedConfig == null) {
+                throw new JsonParseException("Configuration document is empty");
+            }
+
+            boolean migrated = migrateLegacyVeinSize(document, loadedConfig);
+            List<String> corrections = loadedConfig.normalize();
+            for (String correction : corrections) {
+                VeinMiner.LOGGER.warn("Vein Miner config correction: {}", correction);
+            }
+            config = loadedConfig;
+            if (migrated || !corrections.isEmpty()) {
+                saveToDisk();
+            }
+            return true;
+        } catch (IOException | IllegalStateException | JsonParseException exception) {
+            VeinMiner.LOGGER.error("Failed to load Vein Miner config from {}; preserving current config", CONFIG_PATH, exception);
+            return false;
         }
     }
 
-    private static void ensureConfigPath(MinecraftServer server) {
-        if (configPath == null) {
-            configPath = server.getFile(CONFIG_FILE);
+    static boolean migrateLegacyVeinSize(JsonObject document, VeinMinerConfig loadedConfig) {
+        if (!document.has("veinSize")
+                || document.has("maxOreBlocks")
+                || document.has("maxTreeBlocks")
+                || document.has("maxOtherBlocks")) {
+            return false;
+        }
+
+        int legacyLimit;
+        try {
+            legacyLimit = document.get("veinSize").getAsInt();
+        } catch (NumberFormatException | UnsupportedOperationException exception) {
+            VeinMiner.LOGGER.warn("Ignoring invalid legacy veinSize; using category defaults");
+            return true;
+        }
+        int migratedLimit = Math.max(1, Math.min(VeinMinerConfig.MAX_BLOCKS_PER_VEIN, legacyLimit));
+        loadedConfig.maxOreBlocks = migratedLimit;
+        loadedConfig.maxTreeBlocks = migratedLimit;
+        loadedConfig.maxOtherBlocks = migratedLimit;
+        VeinMiner.LOGGER.info("Migrated legacy veinSize={} to all three category limits", legacyLimit);
+        return true;
+    }
+
+    private static void moveAtomically(Path source, Path destination) throws IOException {
+        try {
+            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException exception) {
+            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 }

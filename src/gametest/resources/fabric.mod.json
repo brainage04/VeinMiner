@@ -6,7 +6,11 @@
 	"environment": "*",
 	"entrypoints": {
 		"fabric-gametest": [
-			"io.github.brainage04.vein_miner.VeinMinerGameTest"
+			"io.github.brainage04.vein_miner.VeinMinerGameTest",
+			"io.github.brainage04.vein_miner.VeinMinerPolicyGameTest"
+		],
+		"fabric-client-gametest": [
+			"io.github.brainage04.vein_miner.VeinMinerClientGameTest"
 		]
 	}
 }

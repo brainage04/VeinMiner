@@ -1,350 +1,233 @@
 package io.github.brainage04.vein_miner.vein;
 
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
+import io.github.brainage04.vein_miner.config.VeinMinerConfig.BlockCategory;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import org.jetbrains.annotations.Nullable;
 
 public final class VeinMiningHandler {
-    private static final int INITIAL_DROPS_MAX_AGE_TICKS = 1;
-    private static final int DEFERRED_DROPS_MAX_AGE_TICKS = 20;
-    private static final double DEFERRED_MERGE_RADIUS = 2.0D;
-
-    private static final Set<UUID> activelyVeinMiningPlayers = new HashSet<>();
-    private static final List<PendingOriginMerge> pendingOriginMerges = new ArrayList<>();
+    private static final ThreadLocal<MiningContext> MINING_CONTEXT = new ThreadLocal<>();
+    private static PendingVein pendingVein;
+    private static boolean miningVein;
 
     private VeinMiningHandler() {
     }
 
     public static void initialize() {
-        PlayerBlockBreakEvents.AFTER.register((level, player, pos, state, blockEntity) -> {
-            if (!(level instanceof ServerLevel serverLevel) || !(player instanceof ServerPlayer serverPlayer)) {
-                return;
-            }
-
-            onBlockBroken(serverLevel, serverPlayer, pos, state);
-        });
-        ServerTickEvents.END_SERVER_TICK.register(VeinMiningHandler::tick);
+        PlayerBlockBreakEvents.BEFORE.register(VeinMiningHandler::beforeBlockBreak);
     }
 
-    private static void onBlockBroken(ServerLevel level, ServerPlayer player, BlockPos originPos, BlockState originState) {
-        UUID playerId = player.getUUID();
-        if (activelyVeinMiningPlayers.contains(playerId)) {
-            return;
+    public static boolean isMiningAdditionalBlock() {
+        return MINING_CONTEXT.get() != null;
+    }
+
+    public static int additionalBlockDurabilityCost() {
+        MiningContext context = MINING_CONTEXT.get();
+        return context == null ? 0 : context.durabilityCost;
+    }
+
+    public static float additionalBlockExhaustionCost() {
+        MiningContext context = MINING_CONTEXT.get();
+        return context == null ? 0.005F : context.exhaustionCost;
+    }
+
+    private static boolean beforeBlockBreak(
+            Level world,
+            Player player,
+            BlockPos pos,
+            BlockState state,
+            @Nullable net.minecraft.world.level.block.entity.BlockEntity blockEntity
+    ) {
+        pendingVein = null;
+        if (miningVein || !(world instanceof ServerLevel level) || !(player instanceof ServerPlayer serverPlayer)) {
+            return true;
         }
 
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
-        if (!config.enableVeinMining) {
-            return;
-        }
-        if (!player.isShiftKeyDown()) {
-            return;
-        }
-        if (!player.hasCorrectToolForDrops(originState)) {
-            return;
-        }
-        if (!config.isBlockWhitelisted(originState.getBlock())) {
-            return;
+        ItemStack tool = serverPlayer.getMainHandItem();
+        if (!config.enableVeinMining
+                || !VeinMinerPlayerSettings.shouldActivate(serverPlayer)
+                || !config.isBlockWhitelisted(state)
+                || !VeinMinerPlayerSettings.allowsBlock(serverPlayer, state)
+                || state.getBlock() instanceof LeavesBlock
+                || !tool.isCorrectToolForDrops(state)) {
+            return true;
         }
 
-        int maxAdditionalBlocks = config.veinSize - 1;
-        if (maxAdditionalBlocks <= 0) {
-            return;
-        }
-
-        LongArrayList blocksToBreak = collectConnectedVein(level, originPos, originState, config, maxAdditionalBlocks);
-
-        if (blocksToBreak.isEmpty()) {
-            return;
-        }
-
-        breakBlocksAndConsolidateDrops(level, player, originPos, blocksToBreak);
+        pendingVein = new PendingVein(level, serverPlayer, pos.immutable(), state);
+        return true;
     }
 
-    private static LongArrayList collectConnectedVein(
-            ServerLevel level,
-            BlockPos originPos,
-            BlockState originState,
-            VeinMinerConfig config,
-            int maxAdditionalBlocks
-    ) {
-        LongArrayList result = new LongArrayList(Math.min(maxAdditionalBlocks, 256));
-        LongOpenHashSet visited = new LongOpenHashSet(Math.max(maxAdditionalBlocks * 4, 64));
+    public static void completeBlockBreak(ServerPlayer player, BlockPos pos, boolean destroyed) {
+        if (miningVein) {
+            return;
+        }
+
+        PendingVein pending = pendingVein;
+        pendingVein = null;
+        if (!destroyed
+                || pending == null
+                || pending.player != player
+                || !pending.originPos.equals(pos)) {
+            return;
+        }
+
+        mineConnectedBlocks(pending);
+    }
+
+    private static void mineConnectedBlocks(PendingVein pending) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        BlockCategory category = config.category(pending.originState);
+        int maxBlocks = config.maxBlocks(category);
+        if (maxBlocks <= 1) {
+            return;
+        }
+
         LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
-        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
-
-        long origin = originPos.asLong();
-        visited.add(origin);
+        LongOpenHashSet visited = new LongOpenHashSet(Math.min(maxBlocks * 2, VeinMinerConfig.MAX_BLOCKS_PER_VEIN * 2));
+        LongArrayList connected = new LongArrayList(Math.min(maxBlocks - 1, 128));
+        long origin = pending.originPos.asLong();
         queue.enqueue(origin);
+        visited.add(origin);
 
-        while (!queue.isEmpty() && result.size() < maxAdditionalBlocks) {
-            long current = queue.dequeueLong();
-            int x = BlockPos.getX(current);
-            int y = BlockPos.getY(current);
-            int z = BlockPos.getZ(current);
-
-            scanNeighbors:
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dy == 0 && dz == 0) {
+        while (!queue.isEmpty() && connected.size() + 1 < maxBlocks) {
+            BlockPos current = BlockPos.of(queue.dequeueLong());
+            for (int dx = -1; dx <= 1 && connected.size() + 1 < maxBlocks; dx++) {
+                for (int dy = -1; dy <= 1 && connected.size() + 1 < maxBlocks; dy++) {
+                    for (int dz = -1; dz <= 1 && connected.size() + 1 < maxBlocks; dz++) {
+                        if ((dx == 0 && dy == 0 && dz == 0) || !config.adjacencyMode.includes(dx, dy, dz)) {
                             continue;
                         }
 
-                        int neighborX = x + dx;
-                        int neighborY = y + dy;
-                        int neighborZ = z + dz;
-                        long neighbor = BlockPos.asLong(neighborX, neighborY, neighborZ);
+                        long neighbor = BlockPos.asLong(current.getX() + dx, current.getY() + dy, current.getZ() + dz);
                         if (!visited.add(neighbor)) {
                             continue;
                         }
 
-                        mutablePos.set(neighborX, neighborY, neighborZ);
-                        BlockState neighborState = level.getBlockState(mutablePos);
-                        if (neighborState.isAir()) {
+                        BlockPos neighborPos = BlockPos.of(neighbor);
+                        BlockState neighborState = pending.level.getBlockState(neighborPos);
+                        if (!config.isBlockWhitelisted(neighborState)
+                                || !VeinMinerPlayerSettings.allowsBlock(pending.player, neighborState)
+                                || !isEquivalentTarget(pending.originState, neighborState, category, config)) {
                             continue;
                         }
-                        if (!config.isBlockWhitelisted(neighborState.getBlock())) {
-                            continue;
-                        }
-                        if (!isSameVeinTarget(originState, neighborState, config.betterOreVeinMining)) {
-                            continue;
-                        }
-
-                        result.add(neighbor);
                         queue.enqueue(neighbor);
-
-                        if (result.size() >= maxAdditionalBlocks) {
-                            break scanNeighbors;
-                        }
+                        connected.add(neighbor);
                     }
                 }
             }
         }
 
-        return result;
+        miningVein = true;
+        MiningContext context = new MiningContext(config.durabilityCostPerBlock, config.exhaustionCostPerBlock);
+        try {
+            for (long packedPos : connected) {
+                BlockPos targetPos = BlockPos.of(packedPos);
+                BlockState targetState = pending.level.getBlockState(targetPos);
+                ItemStack currentTool = pending.player.getMainHandItem();
+                if (!config.isBlockWhitelisted(targetState)
+                        || !VeinMinerPlayerSettings.allowsBlock(pending.player, targetState)
+                        || !isEquivalentTarget(pending.originState, targetState, category, config)
+                        || currentTool.isEmpty()
+                        || !currentTool.isCorrectToolForDrops(targetState)
+                        || !canAffordAdditionalBlock(currentTool, config)) {
+                    break;
+                }
+
+                MINING_CONTEXT.set(context);
+                try {
+                    pending.player.gameMode.destroyBlock(targetPos);
+                } finally {
+                    MINING_CONTEXT.remove();
+                }
+            }
+        } finally {
+            MINING_CONTEXT.remove();
+            miningVein = false;
+        }
     }
 
-    private static void breakBlocksAndConsolidateDrops(
+    private static boolean canAffordAdditionalBlock(ItemStack tool, VeinMinerConfig config) {
+        if (!config.stopBeforeBreakingTool || !tool.isDamageableItem() || config.durabilityCostPerBlock == 0) {
+            return true;
+        }
+        int remainingDurability = tool.getMaxDamage() - tool.getDamageValue();
+        return remainingDurability - config.durabilityCostPerBlock >= config.minimumRemainingDurability;
+    }
+
+    private static boolean isEquivalentTarget(
+            BlockState origin,
+            BlockState candidate,
+            BlockCategory category,
+            VeinMinerConfig config
+    ) {
+        if (config.category(candidate) != category) {
+            return false;
+        }
+        if (origin.getBlock() == candidate.getBlock()) {
+            return true;
+        }
+        return switch (category) {
+            case ORE -> config.betterOreVeinMining && sameOreFamily(origin, candidate);
+            case TREE -> config.betterTreeVeinMining && sameWoodFamily(origin, candidate);
+            case OTHER -> false;
+        };
+    }
+
+    private static boolean sameOreFamily(BlockState first, BlockState second) {
+        Identifier firstId = blockId(first);
+        Identifier secondId = blockId(second);
+        return firstId.getNamespace().equals(secondId.getNamespace())
+                && stripPrefix(firstId.getPath(), "deepslate_").equals(stripPrefix(secondId.getPath(), "deepslate_"));
+    }
+
+    private static boolean sameWoodFamily(BlockState first, BlockState second) {
+        Identifier firstId = blockId(first);
+        Identifier secondId = blockId(second);
+        return firstId.getNamespace().equals(secondId.getNamespace())
+                && woodFamily(firstId.getPath()).equals(woodFamily(secondId.getPath()));
+    }
+
+    private static String woodFamily(String path) {
+        String normalized = stripPrefix(path, "stripped_");
+        for (String suffix : new String[]{"_log", "_wood", "_stem", "_hyphae"}) {
+            if (normalized.endsWith(suffix)) {
+                return normalized.substring(0, normalized.length() - suffix.length());
+            }
+        }
+        return normalized;
+    }
+
+    private static String stripPrefix(String value, String prefix) {
+        return value.startsWith(prefix) ? value.substring(prefix.length()) : value;
+    }
+
+    private static Identifier blockId(BlockState state) {
+        return BuiltInRegistries.BLOCK.getKey(state.getBlock());
+    }
+    private record PendingVein(
             ServerLevel level,
             ServerPlayer player,
             BlockPos originPos,
-            LongArrayList blocksToBreak
+            BlockState originState
     ) {
-        UUID playerId = player.getUUID();
-        activelyVeinMiningPlayers.add(playerId);
-
-        int minX = originPos.getX();
-        int minY = originPos.getY();
-        int minZ = originPos.getZ();
-        int maxX = minX;
-        int maxY = minY;
-        int maxZ = minZ;
-
-        try {
-            for (long blockToBreak : blocksToBreak) {
-                BlockPos targetPos = BlockPos.of(blockToBreak);
-                minX = Math.min(minX, targetPos.getX());
-                minY = Math.min(minY, targetPos.getY());
-                minZ = Math.min(minZ, targetPos.getZ());
-                maxX = Math.max(maxX, targetPos.getX());
-                maxY = Math.max(maxY, targetPos.getY());
-                maxZ = Math.max(maxZ, targetPos.getZ());
-
-                BlockState targetState = level.getBlockState(targetPos);
-                if (targetState.isAir()) {
-                    continue;
-                }
-                if (!player.hasCorrectToolForDrops(targetState)) {
-                    continue;
-                }
-
-                player.gameMode.destroyBlock(targetPos);
-            }
-        } finally {
-            activelyVeinMiningPlayers.remove(playerId);
-        }
-
-        AABB searchBounds = new AABB(minX, minY, minZ, maxX + 1.0D, maxY + 1.0D, maxZ + 1.0D).inflate(2.5D);
-        List<ItemEntity> droppedItems = level.getEntitiesOfClass(
-                ItemEntity.class,
-                searchBounds,
-                item -> item.isAlive() && item.getAge() <= INITIAL_DROPS_MAX_AGE_TICKS
-        );
-        if (droppedItems.isEmpty()) {
-            queueDeferredMerge(level, originPos);
-            return;
-        }
-
-        double originX = originPos.getX() + 0.5D;
-        double originY = originPos.getY() + 0.5D;
-        double originZ = originPos.getZ() + 0.5D;
-        for (ItemEntity droppedItem : droppedItems) {
-            droppedItem.setPos(originX, originY, originZ);
-            droppedItem.setDeltaMovement(0.0D, 0.0D, 0.0D);
-        }
-
-        mergeItemsInPlace(droppedItems);
-        queueDeferredMerge(level, originPos);
     }
 
-    private static void tick(MinecraftServer server) {
-        if (pendingOriginMerges.isEmpty()) {
-            return;
-        }
-
-        int currentTick = server.getTickCount();
-        Iterator<PendingOriginMerge> iterator = pendingOriginMerges.iterator();
-        while (iterator.hasNext()) {
-            PendingOriginMerge pendingMerge = iterator.next();
-            if (pendingMerge.executeAtTick > currentTick) {
-                continue;
-            }
-
-            ServerLevel level = server.getLevel(pendingMerge.dimension);
-            if (level != null) {
-                runDeferredOriginMerge(level, pendingMerge.originPos);
-            }
-
-            iterator.remove();
-        }
-    }
-
-    private static void queueDeferredMerge(ServerLevel level, BlockPos originPos) {
-        pendingOriginMerges.add(new PendingOriginMerge(level.dimension(), originPos.immutable(), level.getServer().getTickCount()));
-    }
-
-    private static void runDeferredOriginMerge(ServerLevel level, BlockPos originPos) {
-        double originX = originPos.getX() + 0.5D;
-        double originY = originPos.getY() + 0.5D;
-        double originZ = originPos.getZ() + 0.5D;
-        AABB searchBounds = new AABB(
-                originX - DEFERRED_MERGE_RADIUS,
-                originY - DEFERRED_MERGE_RADIUS,
-                originZ - DEFERRED_MERGE_RADIUS,
-                originX + DEFERRED_MERGE_RADIUS,
-                originY + DEFERRED_MERGE_RADIUS,
-                originZ + DEFERRED_MERGE_RADIUS
-        );
-
-        List<ItemEntity> nearbyDrops = level.getEntitiesOfClass(
-                ItemEntity.class,
-                searchBounds,
-                item -> item.isAlive() && item.getAge() <= DEFERRED_DROPS_MAX_AGE_TICKS
-        );
-        if (nearbyDrops.isEmpty()) {
-            return;
-        }
-
-        for (ItemEntity nearbyDrop : nearbyDrops) {
-            nearbyDrop.setPos(originX, originY, originZ);
-            nearbyDrop.setDeltaMovement(0.0D, 0.0D, 0.0D);
-        }
-
-        mergeItemsInPlace(nearbyDrops);
-    }
-
-    private static void mergeItemsInPlace(List<ItemEntity> itemEntities) {
-        for (int i = 0; i < itemEntities.size(); i++) {
-            ItemEntity current = itemEntities.get(i);
-            if (!current.isAlive()) {
-                continue;
-            }
-
-            ItemStack currentStack = current.getItem();
-            if (currentStack.isEmpty()) {
-                continue;
-            }
-
-            for (int j = i + 1; j < itemEntities.size(); j++) {
-                ItemEntity other = itemEntities.get(j);
-                if (!other.isAlive()) {
-                    continue;
-                }
-
-                ItemStack otherStack = other.getItem();
-                if (otherStack.isEmpty()) {
-                    continue;
-                }
-                if (!ItemStack.isSameItemSameComponents(currentStack, otherStack)) {
-                    continue;
-                }
-
-                int transferable = Math.min(currentStack.getMaxStackSize() - currentStack.getCount(), otherStack.getCount());
-                if (transferable <= 0) {
-                    continue;
-                }
-
-                currentStack.grow(transferable);
-                otherStack.shrink(transferable);
-
-                if (otherStack.isEmpty()) {
-                    other.discard();
-                } else {
-                    other.setItem(otherStack);
-                }
-            }
-
-            current.setItem(currentStack);
-        }
-    }
-
-    private static boolean isSameVeinTarget(BlockState originState, BlockState candidateState, boolean betterOreVeinMiningEnabled) {
-        if (originState.getBlock() == candidateState.getBlock()) {
-            return true;
-        }
-
-        return betterOreVeinMiningEnabled && isEquivalentOre(originState, candidateState);
-    }
-
-    private static boolean isEquivalentOre(BlockState first, BlockState second) {
-        if (!first.is(ConventionalBlockTags.ORES) || !second.is(ConventionalBlockTags.ORES)) {
-            return false;
-        }
-
-        Identifier firstId = BuiltInRegistries.BLOCK.getKey(first.getBlock());
-        Identifier secondId = BuiltInRegistries.BLOCK.getKey(second.getBlock());
-        if (firstId == BuiltInRegistries.BLOCK.getDefaultKey() || secondId == BuiltInRegistries.BLOCK.getDefaultKey()) {
-            return false;
-        }
-        if (!firstId.getNamespace().equals(secondId.getNamespace())) {
-            return false;
-        }
-
-        return normalizeOrePath(firstId.getPath()).equals(normalizeOrePath(secondId.getPath()));
-    }
-
-    private static String normalizeOrePath(String path) {
-        if (path.startsWith("deepslate_")) {
-            return path.substring("deepslate_".length());
-        }
-
-        return path;
-    }
-
-    private record PendingOriginMerge(ResourceKey<Level> dimension, BlockPos originPos, int executeAtTick) {
+    private record MiningContext(int durabilityCost, float exhaustionCost) {
     }
 }

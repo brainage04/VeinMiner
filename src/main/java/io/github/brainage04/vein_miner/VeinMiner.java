@@ -1,9 +1,12 @@
 package io.github.brainage04.vein_miner;
 
+import io.github.brainage04.brainagelib.help.ServerModHelpEntry;
+import io.github.brainage04.brainagelib.help.ServerModHelpRegistry;
 import io.github.brainage04.vein_miner.command.core.ModCommands;
 import io.github.brainage04.vein_miner.command.VeinMinerCommand;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.leaf.LeafDecayRateHandler;
+import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import io.github.brainage04.vein_miner.vein.VeinMiningHandler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -21,10 +24,18 @@ public class VeinMiner implements ModInitializer {
         LOGGER.info("{} initialising...", MOD_NAME);
 
         VeinMinerConfigManager.initialize();
+        VeinMinerPlayerSettings.initialize();
         ModCommands.initialize();
         VeinMiningHandler.initialize();
         LeafDecayRateHandler.initialize();
         ServerTickEvents.END_SERVER_TICK.register(VeinMinerCommand::tick);
+        ServerModHelpRegistry.register(new ServerModHelpEntry(
+                MOD_ID,
+                MOD_NAME,
+                "Mines connected ore and tree blocks using per-player activation and selection controls.",
+                "/veinminer",
+                "/veinminer admin"
+        ));
 
         LOGGER.info("{} initialised.", MOD_NAME);
     }

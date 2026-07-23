@@ -1,121 +1,221 @@
 package io.github.brainage04.vein_miner.config;
 
+import io.github.brainage04.vein_miner.VeinMiner;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 
-public class VeinMinerConfig {
-    public static final int DEFAULT_VEIN_SIZE = 128;
+public final class VeinMinerConfig {
+    public static final int DEFAULT_MAX_ORE_BLOCKS = 128;
+    public static final int DEFAULT_MAX_TREE_BLOCKS = 256;
+    public static final int DEFAULT_MAX_OTHER_BLOCKS = 64;
     public static final int DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER = 100;
+    public static final int MAX_BLOCKS_PER_VEIN = 4096;
+    public static final int MAX_LEAF_DECAY_SPEED_MULTIPLIER = 1000;
+    public static final int MAX_DURABILITY_COST = 64;
+    public static final float MAX_EXHAUSTION_COST = 4.0F;
+    public static final int MAX_SELECTION_ENTRIES = 4096;
 
-    public boolean enableVeinMining;
-    public int veinSize;
-    public boolean betterOreVeinMining;
-    public boolean betterTreeVeinMining;
-    public int leafDecaySpeedMultiplier;
-    public LinkedHashSet<String> whitelist;
+    public static final TagKey<Block> ORE_CATEGORY_TAG = blockTag("ores");
+    public static final TagKey<Block> TREE_CATEGORY_TAG = blockTag("trees");
 
-    public VeinMinerConfig() {
-        this.enableVeinMining = true;
-        this.veinSize = DEFAULT_VEIN_SIZE;
-        this.betterOreVeinMining = true;
-        this.betterTreeVeinMining = true;
-        this.leafDecaySpeedMultiplier = DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER;
-        this.whitelist = defaultWhitelist();
-    }
+    public boolean enableVeinMining = true;
+    public ActivationMode defaultActivationMode = ActivationMode.WHILE_SNEAKING;
+    public AdjacencyMode adjacencyMode = AdjacencyMode.FACES_EDGES_CORNERS;
+    public int maxOreBlocks = DEFAULT_MAX_ORE_BLOCKS;
+    public int maxTreeBlocks = DEFAULT_MAX_TREE_BLOCKS;
+    public int maxOtherBlocks = DEFAULT_MAX_OTHER_BLOCKS;
+    public boolean betterOreVeinMining = true;
+    public boolean betterTreeVeinMining = true;
+    public boolean stopBeforeBreakingTool = true;
+    public int minimumRemainingDurability = 1;
+    public int durabilityCostPerBlock = 1;
+    public float exhaustionCostPerBlock = 0.005F;
+    public boolean fastLeafDecayEnabled = true;
+    public int leafDecaySpeedMultiplier = DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER;
+    public LinkedHashSet<String> whitelist = new LinkedHashSet<>();
+    public LinkedHashSet<String> allowedTags = defaultAllowedTags();
+    public LinkedHashSet<String> deniedBlocks = new LinkedHashSet<>();
+    public LinkedHashSet<String> deniedTags = new LinkedHashSet<>();
 
     public static VeinMinerConfig createDefault() {
         return new VeinMinerConfig();
     }
 
-    public void normalize() {
-        if (this.veinSize < 1) {
-            this.veinSize = DEFAULT_VEIN_SIZE;
+    public List<String> normalize() {
+        List<String> corrections = new ArrayList<>();
+        maxOreBlocks = clamp("maxOreBlocks", maxOreBlocks, 1, MAX_BLOCKS_PER_VEIN, DEFAULT_MAX_ORE_BLOCKS, corrections);
+        maxTreeBlocks = clamp("maxTreeBlocks", maxTreeBlocks, 1, MAX_BLOCKS_PER_VEIN, DEFAULT_MAX_TREE_BLOCKS, corrections);
+        maxOtherBlocks = clamp("maxOtherBlocks", maxOtherBlocks, 1, MAX_BLOCKS_PER_VEIN, DEFAULT_MAX_OTHER_BLOCKS, corrections);
+        leafDecaySpeedMultiplier = clamp(
+                "leafDecaySpeedMultiplier",
+                leafDecaySpeedMultiplier,
+                1,
+                MAX_LEAF_DECAY_SPEED_MULTIPLIER,
+                DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER,
+                corrections
+        );
+        durabilityCostPerBlock = clamp(
+                "durabilityCostPerBlock",
+                durabilityCostPerBlock,
+                0,
+                MAX_DURABILITY_COST,
+                1,
+                corrections
+        );
+        minimumRemainingDurability = clamp(
+                "minimumRemainingDurability",
+                minimumRemainingDurability,
+                0,
+                MAX_BLOCKS_PER_VEIN,
+                1,
+                corrections
+        );
+        if (!Float.isFinite(exhaustionCostPerBlock)
+                || exhaustionCostPerBlock < 0.0F
+                || exhaustionCostPerBlock > MAX_EXHAUSTION_COST) {
+            corrections.add("exhaustionCostPerBlock reset to 0.005 (allowed range: 0.0-" + MAX_EXHAUSTION_COST + ")");
+            exhaustionCostPerBlock = 0.005F;
         }
-        if (this.leafDecaySpeedMultiplier < 1) {
-            this.leafDecaySpeedMultiplier = DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER;
+        if (defaultActivationMode == null) {
+            defaultActivationMode = ActivationMode.WHILE_SNEAKING;
+            corrections.add("defaultActivationMode reset to while_sneaking");
+        }
+        if (adjacencyMode == null) {
+            adjacencyMode = AdjacencyMode.FACES_EDGES_CORNERS;
+            corrections.add("adjacencyMode reset to faces_edges_corners");
         }
 
-        if (this.whitelist == null) {
-            this.whitelist = new LinkedHashSet<>();
-        }
-
-        this.whitelist.removeIf(id -> id == null || Identifier.tryParse(id) == null);
+        whitelist = normalizeIdentifiers("whitelist", whitelist, corrections);
+        allowedTags = normalizeIdentifiers("allowedTags", allowedTags, corrections);
+        deniedBlocks = normalizeIdentifiers("deniedBlocks", deniedBlocks, corrections);
+        deniedTags = normalizeIdentifiers("deniedTags", deniedTags, corrections);
+        return List.copyOf(corrections);
     }
 
-    public boolean isBlockWhitelisted(Block block) {
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && this.whitelist.contains(blockId.toString());
+    public boolean isBlockWhitelisted(BlockState state) {
+        if (matchesId(state, deniedBlocks) || matchesAnyTag(state, deniedTags)) {
+            return false;
+        }
+        return matchesId(state, whitelist) || matchesAnyTag(state, allowedTags);
     }
 
     public boolean addBlockToWhitelist(Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && this.whitelist.add(blockId.toString());
+        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && whitelist.add(blockId.toString());
     }
 
     public boolean removeBlockFromWhitelist(Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && this.whitelist.remove(blockId.toString());
+        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && whitelist.remove(blockId.toString());
     }
 
     public List<String> whitelistAsSortedList() {
-        List<String> values = new ArrayList<>(this.whitelist);
-        values.sort(String::compareTo);
-        return values;
+        return sorted(whitelist);
     }
 
-    private static LinkedHashSet<String> defaultWhitelist() {
-        LinkedHashSet<String> defaults = new LinkedHashSet<>();
+    public BlockCategory category(BlockState state) {
+        if (state.is(ORE_CATEGORY_TAG)) {
+            return BlockCategory.ORE;
+        }
+        if (state.is(TREE_CATEGORY_TAG)) {
+            return BlockCategory.TREE;
+        }
+        return BlockCategory.OTHER;
+    }
 
-        for (Block block : defaultWhitelistBlocks()) {
-            Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-            if (blockId != BuiltInRegistries.BLOCK.getDefaultKey()) {
-                defaults.add(blockId.toString());
+    public int maxBlocks(BlockCategory category) {
+        return switch (category) {
+            case ORE -> maxOreBlocks;
+            case TREE -> maxTreeBlocks;
+            case OTHER -> maxOtherBlocks;
+        };
+    }
+
+    public static TagKey<Block> parseBlockTag(String id) {
+        Identifier identifier = Identifier.tryParse(id);
+        return identifier == null ? null : TagKey.create(Registries.BLOCK, identifier);
+    }
+
+    public enum BlockCategory {
+        ORE,
+        TREE,
+        OTHER
+    }
+
+    private static boolean matchesId(BlockState state, LinkedHashSet<String> ids) {
+        Identifier blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && ids.contains(blockId.toString());
+    }
+
+    private static boolean matchesAnyTag(BlockState state, LinkedHashSet<String> tags) {
+        for (String tagId : tags) {
+            TagKey<Block> tag = parseBlockTag(tagId);
+            if (tag != null && state.is(tag)) {
+                return true;
             }
         }
+        return false;
+    }
 
+    private static LinkedHashSet<String> defaultAllowedTags() {
+        LinkedHashSet<String> defaults = new LinkedHashSet<>();
+        defaults.add(ORE_CATEGORY_TAG.location().toString());
+        defaults.add(TREE_CATEGORY_TAG.location().toString());
         return defaults;
     }
 
-    private static Set<Block> defaultWhitelistBlocks() {
-        return new LinkedHashSet<>(Arrays.asList(
-                Blocks.COAL_ORE,
-                Blocks.IRON_ORE,
-                Blocks.GOLD_ORE,
-                Blocks.COPPER_ORE,
-                Blocks.DIAMOND_ORE,
-                Blocks.EMERALD_ORE,
-                Blocks.LAPIS_ORE,
-                Blocks.REDSTONE_ORE,
+    private static TagKey<Block> blockTag(String path) {
+        return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(VeinMiner.MOD_ID, path));
+    }
 
-                Blocks.DEEPSLATE_COAL_ORE,
-                Blocks.DEEPSLATE_IRON_ORE,
-                Blocks.DEEPSLATE_GOLD_ORE,
-                Blocks.DEEPSLATE_COPPER_ORE,
-                Blocks.DEEPSLATE_DIAMOND_ORE,
-                Blocks.DEEPSLATE_EMERALD_ORE,
-                Blocks.DEEPSLATE_LAPIS_ORE,
-                Blocks.DEEPSLATE_REDSTONE_ORE,
+    private static int clamp(
+            String name,
+            int value,
+            int minimum,
+            int maximum,
+            int defaultValue,
+            List<String> corrections
+    ) {
+        if (value >= minimum && value <= maximum) {
+            return value;
+        }
+        corrections.add(name + " reset to " + defaultValue + " (allowed range: " + minimum + "-" + maximum + ")");
+        return defaultValue;
+    }
 
-                Blocks.NETHER_QUARTZ_ORE,
-                Blocks.NETHER_GOLD_ORE,
-                Blocks.ANCIENT_DEBRIS,
+    private static LinkedHashSet<String> normalizeIdentifiers(
+            String name,
+            LinkedHashSet<String> values,
+            List<String> corrections
+    ) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        if (values != null) {
+            for (String value : values) {
+                Identifier identifier = value == null ? null : Identifier.tryParse(value);
+                if (identifier == null) {
+                    corrections.add("Removed invalid identifier from " + name + ": " + value);
+                } else if (normalized.size() < MAX_SELECTION_ENTRIES) {
+                    normalized.add(identifier.toString());
+                }
+            }
+            if (values.size() > MAX_SELECTION_ENTRIES) {
+                corrections.add(name + " truncated to " + MAX_SELECTION_ENTRIES + " entries");
+            }
+        }
+        return normalized;
+    }
 
-                Blocks.OAK_LOG,
-                Blocks.SPRUCE_LOG,
-                Blocks.BIRCH_LOG,
-                Blocks.JUNGLE_LOG,
-                Blocks.ACACIA_LOG,
-                Blocks.DARK_OAK_LOG,
-                Blocks.PALE_OAK_LOG,
-                Blocks.MANGROVE_LOG,
-                Blocks.CHERRY_LOG,
-
-                Blocks.CRIMSON_STEM,
-                Blocks.WARPED_STEM
-        ));
+    private static List<String> sorted(LinkedHashSet<String> values) {
+        List<String> sorted = new ArrayList<>(values);
+        sorted.sort(String::compareTo);
+        return sorted;
     }
 }

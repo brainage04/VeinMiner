@@ -1,4 +1,4 @@
-# Build and GameTest checks for every change.
+# Build and production GameTest checks for every change.
 name: build
 
 on:
@@ -11,9 +11,7 @@ permissions:
 
 jobs:
   build:
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-mod-build.yml@v2.3.0
-    with:
-      check_scripts: true
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-mod-build.yml@v2.3.4
 
   production-gametests:
-    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-production-gametests.yml@v2.3.0
+    uses: brainage04/FabricModdingConventions/.github/workflows/reusable-production-gametests.yml@v2.3.4

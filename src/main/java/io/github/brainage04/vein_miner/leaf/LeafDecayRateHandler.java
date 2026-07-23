@@ -122,7 +122,7 @@ public final class LeafDecayRateHandler {
 
     private static int getLeafDecaySpeedMultiplier() {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
-        return Math.max(1, config.leafDecaySpeedMultiplier);
+        return config.fastLeafDecayEnabled ? config.leafDecaySpeedMultiplier : 1;
     }
 
     private static boolean isDecayingLeaf(BlockState state) {

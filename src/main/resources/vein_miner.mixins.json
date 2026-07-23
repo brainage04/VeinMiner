@@ -3,7 +3,9 @@
 	"package": "io.github.brainage04.vein_miner.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"mixins": [
-		"LeavesBlockDecayMixin"
+		"BlockMiningCostMixin",
+		"LeavesBlockDecayMixin",
+		"ServerPlayerGameModeCostMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -1,4 +1,5 @@
 plugins {
+	id 'io.github.brainage04.client-gametest-recorder' version "${fabricmoddingconventions_version}"
 	id 'io.github.brainage04.production-gametests' version "${fabricmoddingconventions_version}"
 	id 'io.github.brainage04.workspace-dependencies' version "${fabricmoddingconventions_version}"
 	id 'io.github.brainage04.mod-publishing' version "${fabricmoddingconventions_version}"
@@ -6,10 +7,61 @@ plugins {
 
 repositories {
 	mavenLocal()
+	mavenCentral()
+	ivy {
+		name = "BrainageLibGitHubReleases"
+		url = uri("https://github.com/brainage04/BrainageLib/releases/download")
+		patternLayout {
+			artifact "v[revision]/[artifact]-[revision].[ext]"
+		}
+		metadataSources {
+			artifact()
+		}
+		content {
+			includeModule "io.github.brainage04", "brainagelib"
+		}
+	}
 }
 
 workspaceDependencies {
 	siblingMaven("FabricModdingConventions") {
 		coordinate.set("io.github.brainage04:fabricmoddingconventions:${project.fabricmoddingconventions_version}")
 	}
+	siblingMaven("BrainageLib") {
+		coordinate.set("io.github.brainage04:brainagelib:${project.brainagelib_version}")
+		siblingDirectory.set(rootProject.layout.projectDirectory.dir("../BrainageLib"))
+	}
+}
+
+fabricModConventions {
+	additionalFabricModJsonProperties.add("brainagelib_version")
+}
+
+dependencies {
+	implementation "io.github.brainage04:brainagelib:${project.brainagelib_version}"
+	productionRuntimeMods "io.github.brainage04:brainagelib:${project.brainagelib_version}"
+}
+
+productionGameTests {
+	includeClient.set(true)
+	clientUseXvfb.set(providers.environmentVariable("GTR_RECORDING_MANAGED_XVFB")
+			.map { value -> !value.toBoolean() }
+			.orElse(true))
+}
+
+clientGameTestRecorder {
+	runDir.set(layout.buildDirectory.dir("run/productionClientGameTest"))
+	guiScale.set("2")
+}
+
+tasks.named("recordClientGameTest") {
+	runTaskName.set("runProductionClientGameTest")
+}
+
+tasks.named("prepareClientGameTestRun") {
+	mustRunAfter("prepareProductionGameTestRuns")
+}
+
+tasks.matching { it.name == "runProductionClientGameTest" }.configureEach {
+	dependsOn("prepareClientGameTestRun")
 }
