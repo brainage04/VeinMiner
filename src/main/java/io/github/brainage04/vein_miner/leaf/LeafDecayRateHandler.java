@@ -2,8 +2,6 @@ package io.github.brainage04.vein_miner.leaf;
 
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -29,14 +27,11 @@ public final class LeafDecayRateHandler {
 
     private LeafDecayRateHandler() {
     }
-
-    public static void initialize() {
-        ServerTickEvents.END_SERVER_TICK.register(LeafDecayRateHandler::tick);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            pendingLeafDecays.clear();
-            queuedLeafDecays.clear();
-        });
+    public static void shutdown(MinecraftServer server) {
+        pendingLeafDecays.clear();
+        queuedLeafDecays.clear();
     }
+
 
     public static boolean shouldCancelVanillaDecay(BlockState state) {
         return getLeafDecaySpeedMultiplier() > 1 && isDecayingLeaf(state);
@@ -66,7 +61,7 @@ public final class LeafDecayRateHandler {
         ));
     }
 
-    private static void tick(MinecraftServer server) {
+    public static void tick(MinecraftServer server) {
         if (pendingLeafDecays.isEmpty()) {
             return;
         }

@@ -7,7 +7,6 @@ import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -28,9 +27,6 @@ public final class VeinMiningHandler {
     private VeinMiningHandler() {
     }
 
-    public static void initialize() {
-        PlayerBlockBreakEvents.BEFORE.register(VeinMiningHandler::beforeBlockBreak);
-    }
 
     public static boolean isMiningAdditionalBlock() {
         return MINING_CONTEXT.get() != null;
@@ -46,7 +42,7 @@ public final class VeinMiningHandler {
         return context == null ? 0.005F : context.exhaustionCost;
     }
 
-    private static boolean beforeBlockBreak(
+    public static boolean beforeBlockBreak(
             Level world,
             Player player,
             BlockPos pos,

@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.github.brainage04.vein_miner.VeinMiner;
-import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -19,14 +18,15 @@ import java.util.List;
 
 public final class VeinMinerConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("vein_miner.json");
+    private static Path configPath;
     private static VeinMinerConfig config = VeinMinerConfig.createDefault();
 
     private VeinMinerConfigManager() {
     }
 
-    public static synchronized void initialize() {
-        if (!Files.exists(CONFIG_PATH)) {
+    public static synchronized void initialize(Path configDirectory) {
+        configPath = configDirectory.resolve("vein_miner.json");
+        if (!Files.exists(configPath)) {
             saveToDisk();
             return;
         }
@@ -38,16 +38,16 @@ public final class VeinMinerConfigManager {
     }
 
     public static synchronized boolean saveToDisk() {
-        Path temporaryPath = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".tmp");
+        Path temporaryPath = configPath.resolveSibling(configPath.getFileName() + ".tmp");
         try {
-            Files.createDirectories(CONFIG_PATH.getParent());
+            Files.createDirectories(configPath.getParent());
             try (Writer writer = Files.newBufferedWriter(temporaryPath)) {
                 GSON.toJson(config, writer);
             }
-            moveAtomically(temporaryPath, CONFIG_PATH);
+            moveAtomically(temporaryPath, configPath);
             return true;
         } catch (IOException exception) {
-            VeinMiner.LOGGER.error("Failed to save Vein Miner config to {}", CONFIG_PATH, exception);
+            VeinMiner.LOGGER.error("Failed to save Vein Miner config to {}", configPath, exception);
             try {
                 Files.deleteIfExists(temporaryPath);
             } catch (IOException cleanupException) {
@@ -58,12 +58,12 @@ public final class VeinMinerConfigManager {
     }
 
     public static synchronized boolean reloadFromDisk() {
-        if (!Files.exists(CONFIG_PATH)) {
+        if (!Files.exists(configPath)) {
             config = VeinMinerConfig.createDefault();
             return saveToDisk();
         }
 
-        try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
+        try (Reader reader = Files.newBufferedReader(configPath)) {
             JsonObject document = JsonParser.parseReader(reader).getAsJsonObject();
             VeinMinerConfig loadedConfig = GSON.fromJson(document, VeinMinerConfig.class);
             if (loadedConfig == null) {
@@ -81,7 +81,7 @@ public final class VeinMinerConfigManager {
             }
             return true;
         } catch (IOException | IllegalStateException | JsonParseException exception) {
-            VeinMiner.LOGGER.error("Failed to load Vein Miner config from {}; preserving current config", CONFIG_PATH, exception);
+            VeinMiner.LOGGER.error("Failed to load Vein Miner config from {}; preserving current config", configPath, exception);
             return false;
         }
     }

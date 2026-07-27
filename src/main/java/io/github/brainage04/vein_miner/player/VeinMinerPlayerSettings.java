@@ -6,7 +6,6 @@ import com.google.gson.JsonParseException;
 import io.github.brainage04.vein_miner.VeinMiner;
 import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -40,15 +39,12 @@ public final class VeinMinerPlayerSettings {
     private VeinMinerPlayerSettings() {
     }
 
-    public static void initialize() {
-        ServerLifecycleEvents.SERVER_STARTED.register(VeinMinerPlayerSettings::load);
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
-            save();
-            synchronized (VeinMinerPlayerSettings.class) {
-                PREFERENCES.clear();
-                statePath = null;
-            }
-        });
+    public static void shutdown(MinecraftServer server) {
+        save();
+        synchronized (VeinMinerPlayerSettings.class) {
+            PREFERENCES.clear();
+            statePath = null;
+        }
     }
 
     public static synchronized boolean isEnabled(ServerPlayer player) {
@@ -144,7 +140,7 @@ public final class VeinMinerPlayerSettings {
         return PREFERENCES.computeIfAbsent(player.getUUID(), uuid -> PlayerPreference.defaults());
     }
 
-    private static synchronized void load(MinecraftServer server) {
+    public static synchronized void load(MinecraftServer server) {
         statePath = server.getWorldPath(LevelResource.ROOT).resolve(FILE_NAME);
         PREFERENCES.clear();
         if (!Files.exists(statePath)) {

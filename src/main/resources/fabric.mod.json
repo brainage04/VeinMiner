@@ -16,7 +16,7 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"io.github.brainage04.vein_miner.VeinMiner"
+			"io.github.brainage04.vein_miner.fabric.VeinMinerFabric"
 		]
 	},
 	"mixins": [

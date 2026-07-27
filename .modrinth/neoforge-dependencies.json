@@ -1,0 +1,8 @@
+{
+  "depends": {
+    "brainagelib": ">=${brainagelib_version}"
+  },
+  "suggests": {
+    "telekinesis": "*"
+  }
+}

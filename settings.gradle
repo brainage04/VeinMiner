@@ -17,6 +17,8 @@ pluginManagement {
 				includeGroup "io.github.brainage04"
 			}
 		}
+		maven { url = 'https://maven.architectury.dev/' }
+		maven { url = 'https://maven.neoforged.net/releases/' }
 		maven {
 			name = 'Fabric'
 			url = 'https://maven.fabricmc.net/'
@@ -44,3 +46,6 @@ pluginManagement {
 if (file("../FabricModdingConventions/settings.gradle").exists()) {
 	includeBuild("../FabricModdingConventions")
 }
+
+rootProject.name = 'VeinMiner'
+include 'common', 'fabric', 'neoforge'
