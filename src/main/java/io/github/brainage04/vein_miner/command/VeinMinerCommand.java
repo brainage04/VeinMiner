@@ -427,8 +427,11 @@ public final class VeinMinerCommand {
         return saveSelectionChange(source, "Removed block tag #%s from the %s selection.", tagId, denied ? "denied" : "allowed");
     }
 
-    private static int clearGlobalWhitelist(CommandSourceStack source) throws CommandSyntaxException {
-        ServerPlayer player = source.getPlayerOrException();
+    private static int clearGlobalWhitelist(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            VeinMinerConfigManager.getConfig().whitelist.clear();
+            return saveSelectionChange(source, "Explicit allowed-block whitelist cleared.");
+        }
         int currentTick = source.getServer().getTickCount();
         Integer expiresAt = PENDING_GLOBAL_WHITELIST_CLEARS.get(player.getUUID());
         if (expiresAt != null && currentTick < expiresAt) {

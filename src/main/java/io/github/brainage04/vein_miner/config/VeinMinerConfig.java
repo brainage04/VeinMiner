@@ -93,6 +93,11 @@ public final class VeinMinerConfig {
             corrections.add("adjacencyMode reset to faces_edges_corners");
         }
 
+        if (allowedTags == null) {
+            allowedTags = defaultAllowedTags();
+            corrections.add("allowedTags restored to defaults");
+        }
+
         whitelist = normalizeIdentifiers("whitelist", whitelist, corrections);
         allowedTags = normalizeIdentifiers("allowedTags", allowedTags, corrections);
         deniedBlocks = normalizeIdentifiers("deniedBlocks", deniedBlocks, corrections);

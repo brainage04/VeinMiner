@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class VeinMiningHandler {
     private static final ThreadLocal<MiningContext> MINING_CONTEXT = new ThreadLocal<>();
-    private static PendingVein pendingVein;
+    private static final ThreadLocal<PendingVein> PENDING_VEIN = new ThreadLocal<>();
     private static boolean miningVein;
 
     private VeinMiningHandler() {
@@ -49,7 +49,7 @@ public final class VeinMiningHandler {
             BlockState state,
             @Nullable net.minecraft.world.level.block.entity.BlockEntity blockEntity
     ) {
-        pendingVein = null;
+        PENDING_VEIN.remove();
         if (miningVein || !(world instanceof ServerLevel level) || !(player instanceof ServerPlayer serverPlayer)) {
             return true;
         }
@@ -57,6 +57,7 @@ public final class VeinMiningHandler {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         ItemStack tool = serverPlayer.getMainHandItem();
         if (!config.enableVeinMining
+                || tool.isEmpty()
                 || !VeinMinerPlayerSettings.shouldActivate(serverPlayer)
                 || !config.isBlockWhitelisted(state)
                 || !VeinMinerPlayerSettings.allowsBlock(serverPlayer, state)
@@ -65,7 +66,7 @@ public final class VeinMiningHandler {
             return true;
         }
 
-        pendingVein = new PendingVein(level, serverPlayer, pos.immutable(), state);
+        PENDING_VEIN.set(new PendingVein(level, serverPlayer, pos.immutable(), state));
         return true;
     }
 
@@ -74,8 +75,8 @@ public final class VeinMiningHandler {
             return;
         }
 
-        PendingVein pending = pendingVein;
-        pendingVein = null;
+        PendingVein pending = PENDING_VEIN.get();
+        PENDING_VEIN.remove();
         if (!destroyed
                 || pending == null
                 || pending.player != player

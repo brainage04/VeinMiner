@@ -74,14 +74,13 @@ public final class LeafDecayRateHandler {
                 continue;
             }
 
-            ServerLevel level = server.getLevel(pendingDecay.dimension);
-            if (level == null || !level.isLoaded(pendingDecay.leafPos)) {
-                continue;
-            }
-
             iterator.remove();
             queuedLeafDecays.remove(new LeafDecayKey(pendingDecay.dimension, pendingDecay.leafPos.asLong()));
-            runQueuedLeafDecay(level, pendingDecay.leafPos);
+
+            ServerLevel level = server.getLevel(pendingDecay.dimension);
+            if (level != null && level.isLoaded(pendingDecay.leafPos)) {
+                runQueuedLeafDecay(level, pendingDecay.leafPos);
+            }
         }
     }
 
@@ -111,7 +110,7 @@ public final class LeafDecayRateHandler {
             return 1;
         }
 
-        double random = level.getRandom().nextDouble();
+        double random = Math.min(0.999999999D, level.getRandom().nextDouble());
         return 1 + (int) Math.floor(Math.log(1.0D - random) / Math.log(1.0D - scaledDecayChancePerTick));
     }
 
