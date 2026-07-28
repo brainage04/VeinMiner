@@ -27,7 +27,7 @@ configurations {
     developmentFabric.extendsFrom common
 }
 workspaceDependencies {
-    siblingMaven('FabricModdingConventions') { coordinate.set("io.github.brainage04:fabricmoddingconventions:${project.fabricmoddingconventions_version}") }
+    siblingMaven('FabricModdingConventions') { coordinate.set("io.github.brainage04:fabricmoddingconventions:${project.fabricmoddingconventions_version}"); siblingDirectory.set(rootProject.layout.projectDirectory.dir('../FabricModdingConventions')) }
     siblingMaven('BrainageLib') { coordinate.set("io.github.brainage04:brainagelib:${project.brainagelib_version}"); siblingDirectory.set(rootProject.layout.projectDirectory.dir('../BrainageLib')) }
 }
 fabricModConventions { additionalFabricModJsonProperties.add('brainagelib_version') }

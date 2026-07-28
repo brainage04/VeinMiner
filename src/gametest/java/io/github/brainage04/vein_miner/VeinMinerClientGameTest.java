@@ -6,7 +6,7 @@ import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
-import net.fabricmc.fabric.api.client.gametest.v1.context.TestDedicatedServerContext;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -43,47 +43,40 @@ public class VeinMinerClientGameTest implements FabricClientGameTest {
     public void runTest(ClientGameTestContext context) {
         Properties serverProperties = ClientGameTestServers.flatServerProperties();
 
-        try (TestDedicatedServerContext server = context.worldBuilder().createServer(serverProperties)) {
-            try {
-                ClientGameTestServers.connectToDedicatedServer(context, server, "VeinMiner GameTest");
-                ClientGameTestServers.assertClientWorldAndPlayerAvailable(context);
-                ConfigSnapshot configSnapshot = server.computeOnServer(minecraftServer ->
-                        new ConfigSnapshot(VeinMinerConfigManager.getConfig()));
-                server.runOnServer(minecraftServer ->
-                        prepareMixedVein(minecraftServer.getPlayerList().getPlayers().getFirst()));
-                context.runOnClient(client -> {
-                    if (client.player == null) {
-                        throw new AssertionError("Expected a connected client player for the recording.");
-                    }
-                    client.player.setYRot(-90.0F);
-                    client.player.setXRot(12.0F);
-                });
-                context.waitTicks(10);
-                try {
-                    ClientGameTestRecorder.startRecording(context);
-                    ClientGameTestRecorder.showStep(context, "veinminer.stage", "VeinMiner: mixed ore vein", "A survival player prepares five connected ores");
-                    context.waitTicks(30);
-
-                    ClientGameTestRecorder.showStep(context, "veinminer.sneak", "Sneak mining enabled", "Breaking one ore should clear the mixed diamond vein");
-                    server.runOnServer(minecraftServer -> breakBlock(minecraftServer.getPlayerList().getPlayers().getFirst(), MIXED_ORIGIN, true));
-                    context.waitTicks(30);
-                    server.runOnServer(minecraftServer -> assertMixedVeinResult(minecraftServer.getPlayerList().getPlayers().getFirst().level()));
-
-                    ClientGameTestRecorder.showStep(context, "veinminer.gate", "Sneak gate", "Without sneaking, the connected neighbor stays intact");
-                    server.runOnServer(minecraftServer -> prepareUnsneakingVein(minecraftServer.getPlayerList().getPlayers().getFirst()));
-                    context.waitTicks(25);
-                    server.runOnServer(minecraftServer -> breakBlock(minecraftServer.getPlayerList().getPlayers().getFirst(), UNSNEAKING_ORIGIN, false));
-                    context.waitTicks(30);
-                    server.runOnServer(minecraftServer -> assertUnsneakingResult(minecraftServer.getPlayerList().getPlayers().getFirst().level()));
-                    ClientGameTestRecorder.showStep(context, "veinminer.complete", "VeinMiner verified", "Mixed traversal and sneak-gated mining passed");
-                    context.waitTicks(20);
-                } finally {
-                    server.runOnServer(minecraftServer -> configSnapshot.restore(VeinMinerConfigManager.getConfig()));
-                }
-            } finally {
-                ClientGameTestServers.disconnectFromDedicatedServer(context);
+        ClientGameTestServers.withDedicatedServer(context, serverProperties, "VeinMiner GameTest", server -> { ClientGameTestServers.assertClientWorldAndPlayerAvailable(context);
+        ConfigSnapshot configSnapshot = server.computeOnServer(minecraftServer ->
+                new ConfigSnapshot(VeinMinerConfigManager.getConfig()));
+        server.runOnServer(minecraftServer ->
+                prepareMixedVein(minecraftServer.getPlayerList().getPlayers().getFirst()));
+        context.runOnClient(client -> {
+            if (client.player == null) {
+                throw new AssertionError("Expected a connected client player for the recording.");
             }
-        }
+            client.player.setYRot(-90.0F);
+            client.player.setXRot(12.0F);
+        });
+        context.waitTicks(10);
+        try {
+            ClientGameTestRecorder.startRecording(context);
+            ClientGameTestRecorder.showStep(context, "veinminer.stage", "VeinMiner: mixed ore vein", "A survival player prepares five connected ores");
+            context.waitTicks(30);
+        
+            ClientGameTestRecorder.showStep(context, "veinminer.sneak", "Sneak mining enabled", "Breaking one ore should clear the mixed diamond vein");
+            server.runOnServer(minecraftServer -> breakBlock(minecraftServer.getPlayerList().getPlayers().getFirst(), MIXED_ORIGIN, true));
+            context.waitTicks(30);
+            server.runOnServer(minecraftServer -> assertMixedVeinResult(minecraftServer.getPlayerList().getPlayers().getFirst().level()));
+        
+            ClientGameTestRecorder.showStep(context, "veinminer.gate", "Sneak gate", "Without sneaking, the connected neighbor stays intact");
+            server.runOnServer(minecraftServer -> prepareUnsneakingVein(minecraftServer.getPlayerList().getPlayers().getFirst()));
+            context.waitTicks(25);
+            server.runOnServer(minecraftServer -> breakBlock(minecraftServer.getPlayerList().getPlayers().getFirst(), UNSNEAKING_ORIGIN, false));
+            context.waitTicks(30);
+            server.runOnServer(minecraftServer -> assertUnsneakingResult(minecraftServer.getPlayerList().getPlayers().getFirst().level()));
+            ClientGameTestRecorder.showStep(context, "veinminer.complete", "VeinMiner verified", "Mixed traversal and sneak-gated mining passed");
+            context.waitTicks(20);
+        } finally {
+            server.runOnServer(minecraftServer -> configSnapshot.restore(VeinMinerConfigManager.getConfig()));
+        } });
     }
 
     private static void prepareMixedVein(ServerPlayer player) {
