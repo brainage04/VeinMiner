@@ -12,12 +12,13 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class BlockMiningCostMixin {
     @WrapOperation(
             method = "playerDestroy",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/world/entity/player/Player;causeFoodExhaustion(F)V"
-            )
-    )
-    private void veinMiner$applyConfiguredExhaustionCost(Player player, float amount, Operation<Void> original) {
+            at =
+                    @At(
+                            value = "INVOKE",
+                            target =
+                                    "Lnet/minecraft/world/entity/player/Player;causeFoodExhaustion(F)V"))
+    private void veinMiner$applyConfiguredExhaustionCost(
+            Player player, float amount, Operation<Void> original) {
         if (VeinMiningHandler.isMiningAdditionalBlock()) {
             player.causeFoodExhaustion(VeinMiningHandler.additionalBlockExhaustionCost());
         } else {

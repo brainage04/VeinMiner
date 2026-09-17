@@ -6,7 +6,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import io.github.brainage04.vein_miner.VeinMiner;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -17,12 +16,12 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 public final class VeinMinerConfigManager {
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    private static final Gson GSON =
+            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static Path configPath;
     private static VeinMinerConfig config = VeinMinerConfig.createDefault();
 
-    private VeinMinerConfigManager() {
-    }
+    private VeinMinerConfigManager() {}
 
     public static synchronized void initialize(Path configDirectory) {
         configPath = configDirectory.resolve("vein_miner.json");
@@ -81,7 +80,10 @@ public final class VeinMinerConfigManager {
             }
             return true;
         } catch (IOException | IllegalStateException | JsonParseException exception) {
-            VeinMiner.LOGGER.error("Failed to load Vein Miner config from {}; preserving current config", configPath, exception);
+            VeinMiner.LOGGER.error(
+                    "Failed to load Vein Miner config from {}; preserving current config",
+                    configPath,
+                    exception);
             return false;
         }
     }
@@ -105,13 +107,18 @@ public final class VeinMinerConfigManager {
         loadedConfig.maxOreBlocks = migratedLimit;
         loadedConfig.maxTreeBlocks = migratedLimit;
         loadedConfig.maxOtherBlocks = migratedLimit;
-        VeinMiner.LOGGER.info("Migrated legacy veinSize={} to all three category limits", legacyLimit);
+        VeinMiner.LOGGER.info(
+                "Migrated legacy veinSize={} to all three category limits", legacyLimit);
         return true;
     }
 
     private static void moveAtomically(Path source, Path destination) throws IOException {
         try {
-            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(
+                    source,
+                    destination,
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
         } catch (AtomicMoveNotSupportedException exception) {
             Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
         }

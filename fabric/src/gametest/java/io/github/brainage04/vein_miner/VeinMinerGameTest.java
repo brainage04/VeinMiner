@@ -2,6 +2,7 @@ package io.github.brainage04.vein_miner;
 
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import java.util.LinkedHashSet;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
@@ -15,8 +16,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
-
-import java.util.LinkedHashSet;
 
 public class VeinMinerGameTest {
     private static final BlockPos ORIGIN_POS = new BlockPos(1, 1, 1);
@@ -99,11 +98,18 @@ public class VeinMinerGameTest {
             int inventoryDiamonds = countInventoryItem(player, Items.DIAMOND);
             int worldDiamonds = countWorldItem(context, Items.DIAMOND);
             if (FabricLoader.getInstance().isModLoaded("telekinesis")) {
-                assertCount("inventory diamonds from a mixed vein with Telekinesis", inventoryDiamonds, 2);
+                assertCount(
+                        "inventory diamonds from a mixed vein with Telekinesis",
+                        inventoryDiamonds,
+                        2);
                 assertCount("world diamonds from a mixed vein with Telekinesis", worldDiamonds, 0);
             } else {
-                assertCount("inventory diamonds from a mixed vein without Telekinesis", inventoryDiamonds, 0);
-                assertCount("world diamonds from a mixed vein without Telekinesis", worldDiamonds, 2);
+                assertCount(
+                        "inventory diamonds from a mixed vein without Telekinesis",
+                        inventoryDiamonds,
+                        0);
+                assertCount(
+                        "world diamonds from a mixed vein without Telekinesis", worldDiamonds, 2);
             }
         } finally {
             config.enableVeinMining = previousEnabled;
@@ -130,7 +136,8 @@ public class VeinMinerGameTest {
         BlockPos origin = context.absolutePos(ORIGIN_POS);
         AABB bounds = new AABB(origin).inflate(5.0D);
         int count = 0;
-        for (ItemEntity itemEntity : context.getLevel().getEntitiesOfClass(ItemEntity.class, bounds)) {
+        for (ItemEntity itemEntity :
+                context.getLevel().getEntitiesOfClass(ItemEntity.class, bounds)) {
             ItemStack stack = itemEntity.getItem();
             if (stack.is(item)) {
                 count += stack.getCount();
@@ -141,7 +148,8 @@ public class VeinMinerGameTest {
 
     private static void assertCount(String description, int actual, int expected) {
         if (actual != expected) {
-            throw new AssertionError("Expected " + expected + " " + description + ", found " + actual + ".");
+            throw new AssertionError(
+                    "Expected " + expected + " " + description + ", found " + actual + ".");
         }
     }
 }

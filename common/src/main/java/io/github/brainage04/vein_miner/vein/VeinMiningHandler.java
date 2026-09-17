@@ -24,9 +24,7 @@ public final class VeinMiningHandler {
     private static PendingVein pendingVein;
     private static boolean miningVein;
 
-    private VeinMiningHandler() {
-    }
-
+    private VeinMiningHandler() {}
 
     public static boolean isMiningAdditionalBlock() {
         return MINING_CONTEXT.get() != null;
@@ -47,10 +45,11 @@ public final class VeinMiningHandler {
             Player player,
             BlockPos pos,
             BlockState state,
-            @Nullable net.minecraft.world.level.block.entity.BlockEntity blockEntity
-    ) {
+            @Nullable net.minecraft.world.level.block.entity.BlockEntity blockEntity) {
         pendingVein = null;
-        if (miningVein || !(world instanceof ServerLevel level) || !(player instanceof ServerPlayer serverPlayer)) {
+        if (miningVein
+                || !(world instanceof ServerLevel level)
+                || !(player instanceof ServerPlayer serverPlayer)) {
             return true;
         }
 
@@ -95,7 +94,9 @@ public final class VeinMiningHandler {
         }
 
         LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
-        LongOpenHashSet visited = new LongOpenHashSet(Math.min(maxBlocks * 2, VeinMinerConfig.MAX_BLOCKS_PER_VEIN * 2));
+        LongOpenHashSet visited =
+                new LongOpenHashSet(
+                        Math.min(maxBlocks * 2, VeinMinerConfig.MAX_BLOCKS_PER_VEIN * 2));
         LongArrayList connected = new LongArrayList(Math.min(maxBlocks - 1, 128));
         long origin = pending.originPos.asLong();
         queue.enqueue(origin);
@@ -106,11 +107,16 @@ public final class VeinMiningHandler {
             for (int dx = -1; dx <= 1 && connected.size() + 1 < maxBlocks; dx++) {
                 for (int dy = -1; dy <= 1 && connected.size() + 1 < maxBlocks; dy++) {
                     for (int dz = -1; dz <= 1 && connected.size() + 1 < maxBlocks; dz++) {
-                        if ((dx == 0 && dy == 0 && dz == 0) || !config.adjacencyMode.includes(dx, dy, dz)) {
+                        if ((dx == 0 && dy == 0 && dz == 0)
+                                || !config.adjacencyMode.includes(dx, dy, dz)) {
                             continue;
                         }
 
-                        long neighbor = BlockPos.asLong(current.getX() + dx, current.getY() + dy, current.getZ() + dz);
+                        long neighbor =
+                                BlockPos.asLong(
+                                        current.getX() + dx,
+                                        current.getY() + dy,
+                                        current.getZ() + dz);
                         if (!visited.add(neighbor)) {
                             continue;
                         }
@@ -118,8 +124,10 @@ public final class VeinMiningHandler {
                         BlockPos neighborPos = BlockPos.of(neighbor);
                         BlockState neighborState = pending.level.getBlockState(neighborPos);
                         if (!config.isBlockWhitelisted(neighborState)
-                                || !VeinMinerPlayerSettings.allowsBlock(pending.player, neighborState)
-                                || !isEquivalentTarget(pending.originState, neighborState, category, config)) {
+                                || !VeinMinerPlayerSettings.allowsBlock(
+                                        pending.player, neighborState)
+                                || !isEquivalentTarget(
+                                        pending.originState, neighborState, category, config)) {
                             continue;
                         }
                         queue.enqueue(neighbor);
@@ -130,7 +138,8 @@ public final class VeinMiningHandler {
         }
 
         miningVein = true;
-        MiningContext context = new MiningContext(config.durabilityCostPerBlock, config.exhaustionCostPerBlock);
+        MiningContext context =
+                new MiningContext(config.durabilityCostPerBlock, config.exhaustionCostPerBlock);
         try {
             for (long packedPos : connected) {
                 BlockPos targetPos = BlockPos.of(packedPos);
@@ -159,19 +168,21 @@ public final class VeinMiningHandler {
     }
 
     private static boolean canAffordAdditionalBlock(ItemStack tool, VeinMinerConfig config) {
-        if (!config.stopBeforeBreakingTool || !tool.isDamageableItem() || config.durabilityCostPerBlock == 0) {
+        if (!config.stopBeforeBreakingTool
+                || !tool.isDamageableItem()
+                || config.durabilityCostPerBlock == 0) {
             return true;
         }
         int remainingDurability = tool.getMaxDamage() - tool.getDamageValue();
-        return remainingDurability - config.durabilityCostPerBlock >= config.minimumRemainingDurability;
+        return remainingDurability - config.durabilityCostPerBlock
+                >= config.minimumRemainingDurability;
     }
 
     private static boolean isEquivalentTarget(
             BlockState origin,
             BlockState candidate,
             BlockCategory category,
-            VeinMinerConfig config
-    ) {
+            VeinMinerConfig config) {
         if (config.category(candidate) != category) {
             return false;
         }
@@ -189,7 +200,8 @@ public final class VeinMiningHandler {
         Identifier firstId = blockId(first);
         Identifier secondId = blockId(second);
         return firstId.getNamespace().equals(secondId.getNamespace())
-                && stripPrefix(firstId.getPath(), "deepslate_").equals(stripPrefix(secondId.getPath(), "deepslate_"));
+                && stripPrefix(firstId.getPath(), "deepslate_")
+                        .equals(stripPrefix(secondId.getPath(), "deepslate_"));
     }
 
     private static boolean sameWoodFamily(BlockState first, BlockState second) {
@@ -201,7 +213,7 @@ public final class VeinMiningHandler {
 
     private static String woodFamily(String path) {
         String normalized = stripPrefix(path, "stripped_");
-        for (String suffix : new String[]{"_log", "_wood", "_stem", "_hyphae"}) {
+        for (String suffix : new String[] {"_log", "_wood", "_stem", "_hyphae"}) {
             if (normalized.endsWith(suffix)) {
                 return normalized.substring(0, normalized.length() - suffix.length());
             }
@@ -216,14 +228,9 @@ public final class VeinMiningHandler {
     private static Identifier blockId(BlockState state) {
         return BuiltInRegistries.BLOCK.getKey(state.getBlock());
     }
-    private record PendingVein(
-            ServerLevel level,
-            ServerPlayer player,
-            BlockPos originPos,
-            BlockState originState
-    ) {
-    }
 
-    private record MiningContext(int durabilityCost, float exhaustionCost) {
-    }
+    private record PendingVein(
+            ServerLevel level, ServerPlayer player, BlockPos originPos, BlockState originState) {}
+
+    private record MiningContext(int durabilityCost, float exhaustionCost) {}
 }

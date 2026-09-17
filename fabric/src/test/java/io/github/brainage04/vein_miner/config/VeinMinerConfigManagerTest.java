@@ -1,10 +1,10 @@
 package io.github.brainage04.vein_miner.config;
 
-import com.google.gson.JsonParser;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Test;
 
 class VeinMinerConfigManagerTest {
     @Test

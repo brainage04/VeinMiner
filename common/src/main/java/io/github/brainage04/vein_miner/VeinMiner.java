@@ -16,8 +16,7 @@ public final class VeinMiner {
     public static final String MOD_NAME = "Vein Miner";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
 
-    private VeinMiner() {
-    }
+    private VeinMiner() {}
 
     public static void initialize(ServerPlatform platform) {
         VeinMinerConfigManager.initialize(platform.configDirectory());
@@ -28,11 +27,13 @@ public final class VeinMiner {
         platform.registerServerStarted(VeinMinerPlayerSettings::load);
         platform.registerServerStopping(VeinMinerPlayerSettings::shutdown);
         platform.registerServerStopping(LeafDecayRateHandler::shutdown);
-        ServerModHelpRegistry.register(new ServerModHelpEntry(
-                MOD_ID, MOD_NAME,
-                "Mines connected ore and tree blocks using per-player activation and selection controls.",
-                "/veinminer", "/veinminer admin"
-        ));
+        ServerModHelpRegistry.register(
+                new ServerModHelpEntry(
+                        MOD_ID,
+                        MOD_NAME,
+                        "Mines connected ore and tree blocks using per-player activation and selection controls.",
+                        "/veinminer",
+                        "/veinminer admin"));
         LOGGER.info("{} initialised.", MOD_NAME);
     }
 }

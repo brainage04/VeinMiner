@@ -14,12 +14,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LeavesBlock.class)
 public abstract class LeavesBlockDecayMixin {
     @Inject(method = "tick", at = @At("TAIL"))
-    private void veinMiner$queueAcceleratedDecay(BlockState state, ServerLevel level, BlockPos pos, RandomSource random, CallbackInfo ci) {
+    private void veinMiner$queueAcceleratedDecay(
+            BlockState state,
+            ServerLevel level,
+            BlockPos pos,
+            RandomSource random,
+            CallbackInfo ci) {
         LeafDecayRateHandler.queueIfDecaying(level, pos, level.getBlockState(pos));
     }
 
     @Inject(method = "randomTick", at = @At("HEAD"), cancellable = true)
-    private void veinMiner$cancelVanillaDecay(BlockState state, ServerLevel level, BlockPos pos, RandomSource random, CallbackInfo ci) {
+    private void veinMiner$cancelVanillaDecay(
+            BlockState state,
+            ServerLevel level,
+            BlockPos pos,
+            RandomSource random,
+            CallbackInfo ci) {
         if (!LeafDecayRateHandler.shouldCancelVanillaDecay(state)) {
             return;
         }

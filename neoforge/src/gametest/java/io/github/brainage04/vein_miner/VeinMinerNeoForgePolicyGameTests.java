@@ -1,7 +1,7 @@
 package io.github.brainage04.vein_miner;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
 import io.github.brainage04.brainagelib.help.ServerModHelpRegistry;
 import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.AdjacencyMode;
@@ -9,10 +9,13 @@ import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.leaf.LeafDecayRateHandler;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.LinkedHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.storage.LevelResource;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -22,11 +25,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-
-import java.util.LinkedHashSet;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import net.minecraft.world.level.storage.LevelResource;
 
 public class VeinMinerNeoForgePolicyGameTests {
     private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
@@ -92,17 +91,26 @@ public class VeinMinerNeoForgePolicyGameTests {
             destroyOrigin(context, player);
             player.getFoodData().tick(player);
 
-            int minedBlocks = player.getStats().getValue(Stats.BLOCK_MINED, Blocks.DIAMOND_ORE) - previousStat;
+            int minedBlocks =
+                    player.getStats().getValue(Stats.BLOCK_MINED, Blocks.DIAMOND_ORE)
+                            - previousStat;
             if (minedBlocks != 2) {
-                throw new AssertionError("Expected two diamond-ore mining statistics, found " + minedBlocks + ".");
+                throw new AssertionError(
+                        "Expected two diamond-ore mining statistics, found " + minedBlocks + ".");
             }
             int toolDamage = player.getMainHandItem().getDamageValue();
             if (toolDamage != 4) {
-                throw new AssertionError("Expected one vanilla and three configured durability damage, found " + toolDamage + ".");
+                throw new AssertionError(
+                        "Expected one vanilla and three configured durability damage, found "
+                                + toolDamage
+                                + ".");
             }
             float saturationLoss = previousSaturation - player.getFoodData().getSaturationLevel();
             if (Math.abs(saturationLoss - 1.0F) > 0.0001F) {
-                throw new AssertionError("Expected configured exhaustion to consume one saturation point, found " + saturationLoss + ".");
+                throw new AssertionError(
+                        "Expected configured exhaustion to consume one saturation point, found "
+                                + saturationLoss
+                                + ".");
             }
         } finally {
             snapshot.restore(config);
@@ -130,13 +138,22 @@ public class VeinMinerNeoForgePolicyGameTests {
             context.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN);
             if (context.getBlockState(ORIGIN.east()).isAir()) {
                 ItemStack currentTool = player.getMainHandItem();
-                throw new AssertionError("Tool protection mined the extra block; captured damage="
-                        + tool.getDamageValue() + ", current damage=" + currentTool.getDamageValue()
-                        + ", max=" + currentTool.getMaxDamage() + ", minimum="
-                        + config.minimumRemainingDurability + ", cost=" + config.durabilityCostPerBlock + ".");
+                throw new AssertionError(
+                        "Tool protection mined the extra block; captured damage="
+                                + tool.getDamageValue()
+                                + ", current damage="
+                                + currentTool.getDamageValue()
+                                + ", max="
+                                + currentTool.getMaxDamage()
+                                + ", minimum="
+                                + config.minimumRemainingDurability
+                                + ", cost="
+                                + config.durabilityCostPerBlock
+                                + ".");
             }
             if (tool.isEmpty() || tool.getMaxDamage() - tool.getDamageValue() != 1) {
-                throw new AssertionError("Expected the pickaxe to survive with exactly one durability point.");
+                throw new AssertionError(
+                        "Expected the pickaxe to survive with exactly one durability point.");
             }
         } finally {
             snapshot.restore(config);
@@ -224,14 +241,17 @@ public class VeinMinerNeoForgePolicyGameTests {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         ConfigSnapshot snapshot = new ConfigSnapshot(config);
         try {
-            BlockState decayingLeaves = Blocks.OAK_LEAVES.defaultBlockState()
-                    .setValue(BlockStateProperties.PERSISTENT, false)
-                    .setValue(BlockStateProperties.DISTANCE, LeavesBlock.DECAY_DISTANCE);
+            BlockState decayingLeaves =
+                    Blocks.OAK_LEAVES
+                            .defaultBlockState()
+                            .setValue(BlockStateProperties.PERSISTENT, false)
+                            .setValue(BlockStateProperties.DISTANCE, LeavesBlock.DECAY_DISTANCE);
             config.betterTreeVeinMining = false;
             config.fastLeafDecayEnabled = true;
             config.leafDecaySpeedMultiplier = 100;
             if (!LeafDecayRateHandler.shouldCancelVanillaDecay(decayingLeaves)) {
-                throw new AssertionError("Fast leaf decay should remain active independently of tree-family mining.");
+                throw new AssertionError(
+                        "Fast leaf decay should remain active independently of tree-family mining.");
             }
             config.fastLeafDecayEnabled = false;
             if (LeafDecayRateHandler.shouldCancelVanillaDecay(decayingLeaves)) {
@@ -249,11 +269,15 @@ public class VeinMinerNeoForgePolicyGameTests {
             if (!VeinMinerPlayerSettings.setEnabled(player, false)) {
                 throw new AssertionError("Expected the player toggle to save.");
             }
-            Path settingsPath = context.getLevel().getServer().getWorldPath(LevelResource.ROOT)
-                    .resolve("vein-miner-players.json");
-            JsonObject players = JsonParser.parseString(Files.readString(settingsPath))
-                    .getAsJsonObject()
-                    .getAsJsonObject("players");
+            Path settingsPath =
+                    context.getLevel()
+                            .getServer()
+                            .getWorldPath(LevelResource.ROOT)
+                            .resolve("vein-miner-players.json");
+            JsonObject players =
+                    JsonParser.parseString(Files.readString(settingsPath))
+                            .getAsJsonObject()
+                            .getAsJsonObject("players");
             JsonObject playerSettings = players.getAsJsonObject(player.getUUID().toString());
             if (playerSettings == null || playerSettings.get("enabled").getAsBoolean()) {
                 throw new AssertionError("Expected the disabled player toggle in world storage.");
@@ -267,17 +291,22 @@ public class VeinMinerNeoForgePolicyGameTests {
     }
 
     public void combinedServerHelpIncludesVeinMiner(GameTestHelper context) {
-        boolean registered = ServerModHelpRegistry.entries().stream()
-                .anyMatch(entry -> entry.modId().equals(VeinMiner.MOD_ID)
-                        && entry.helpCommand().equals("/veinminer")
-                        && entry.adminConfigCommand().equals("/veinminer admin"));
+        boolean registered =
+                ServerModHelpRegistry.entries().stream()
+                        .anyMatch(
+                                entry ->
+                                        entry.modId().equals(VeinMiner.MOD_ID)
+                                                && entry.helpCommand().equals("/veinminer")
+                                                && entry.adminConfigCommand()
+                                                        .equals("/veinminer admin"));
         if (!registered) {
             throw new AssertionError("Expected Vein Miner in the shared server help registry.");
         }
         context.succeed();
     }
 
-    private static ServerPlayer createPlayer(GameTestHelper context, net.minecraft.world.item.Item tool) {
+    private static ServerPlayer createPlayer(
+            GameTestHelper context, net.minecraft.world.item.Item tool) {
         ServerPlayer player = (ServerPlayer) context.makeMockServerPlayer(GameType.SURVIVAL);
         player.setShiftKeyDown(false);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(tool));

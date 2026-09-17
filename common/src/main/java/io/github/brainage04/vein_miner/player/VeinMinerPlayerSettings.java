@@ -6,14 +6,6 @@ import com.google.gson.JsonParseException;
 import io.github.brainage04.vein_miner.VeinMiner;
 import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.LevelResource;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -27,17 +19,24 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.LevelResource;
 
 public final class VeinMinerPlayerSettings {
     public static final int MAX_PERSONAL_WHITELIST_SIZE = 64;
     private static final int SCHEMA_VERSION = 1;
     private static final String FILE_NAME = "vein-miner-players.json";
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    private static final Gson GSON =
+            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final Map<UUID, PlayerPreference> PREFERENCES = new HashMap<>();
     private static Path statePath;
 
-    private VeinMinerPlayerSettings() {
-    }
+    private VeinMinerPlayerSettings() {}
 
     public static void shutdown(MinecraftServer server) {
         save();
@@ -84,16 +83,19 @@ public final class VeinMinerPlayerSettings {
         return save();
     }
 
-    public static synchronized boolean setPersonalWhitelistEnabled(ServerPlayer player, boolean enabled) {
+    public static synchronized boolean setPersonalWhitelistEnabled(
+            ServerPlayer player, boolean enabled) {
         mutablePreference(player).personalWhitelistEnabled = enabled;
         return save();
     }
 
-    public static synchronized WhitelistAddResult addPersonalBlock(ServerPlayer player, Block block) {
+    public static synchronized WhitelistAddResult addPersonalBlock(
+            ServerPlayer player, Block block) {
         PlayerPreference preference = mutablePreference(player);
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
         if (blockId == BuiltInRegistries.BLOCK.getDefaultKey()
-                || !VeinMinerConfigManager.getConfig().isBlockWhitelisted(block.defaultBlockState())) {
+                || !VeinMinerConfigManager.getConfig()
+                        .isBlockWhitelisted(block.defaultBlockState())) {
             return WhitelistAddResult.NOT_GLOBALLY_ALLOWED;
         }
         if (preference.personalWhitelist.contains(blockId.toString())) {
@@ -110,8 +112,9 @@ public final class VeinMinerPlayerSettings {
 
     public static synchronized boolean removePersonalBlock(ServerPlayer player, Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        boolean removed = blockId != BuiltInRegistries.BLOCK.getDefaultKey()
-                && mutablePreference(player).personalWhitelist.remove(blockId.toString());
+        boolean removed =
+                blockId != BuiltInRegistries.BLOCK.getDefaultKey()
+                        && mutablePreference(player).personalWhitelist.remove(blockId.toString());
         if (removed) {
             save();
         }
@@ -150,7 +153,9 @@ public final class VeinMinerPlayerSettings {
 
         try (Reader reader = Files.newBufferedReader(statePath)) {
             SavedState loaded = GSON.fromJson(reader, SavedState.class);
-            if (loaded == null || loaded.schemaVersion != SCHEMA_VERSION || loaded.players == null) {
+            if (loaded == null
+                    || loaded.schemaVersion != SCHEMA_VERSION
+                    || loaded.players == null) {
                 throw new JsonParseException("Unsupported or incomplete player settings document");
             }
             for (Map.Entry<String, PlayerPreference> entry : loaded.players.entrySet()) {
@@ -162,11 +167,15 @@ public final class VeinMinerPlayerSettings {
                     preference.normalize();
                     PREFERENCES.put(UUID.fromString(entry.getKey()), preference);
                 } catch (IllegalArgumentException exception) {
-                    VeinMiner.LOGGER.warn("Ignoring invalid player settings entry in {}: {}", statePath, entry.getKey());
+                    VeinMiner.LOGGER.warn(
+                            "Ignoring invalid player settings entry in {}: {}",
+                            statePath,
+                            entry.getKey());
                 }
             }
         } catch (IOException | JsonParseException exception) {
-            VeinMiner.LOGGER.error("Failed to load Vein Miner player settings from {}", statePath, exception);
+            VeinMiner.LOGGER.error(
+                    "Failed to load Vein Miner player settings from {}", statePath, exception);
         }
     }
 
@@ -187,7 +196,8 @@ public final class VeinMinerPlayerSettings {
             moveAtomically(temporaryPath, statePath);
             return true;
         } catch (IOException exception) {
-            VeinMiner.LOGGER.error("Failed to save Vein Miner player settings to {}", statePath, exception);
+            VeinMiner.LOGGER.error(
+                    "Failed to save Vein Miner player settings to {}", statePath, exception);
             try {
                 Files.deleteIfExists(temporaryPath);
             } catch (IOException cleanupException) {
@@ -199,7 +209,11 @@ public final class VeinMinerPlayerSettings {
 
     private static void moveAtomically(Path source, Path destination) throws IOException {
         try {
-            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(
+                    source,
+                    destination,
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
         } catch (AtomicMoveNotSupportedException exception) {
             Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
         }
