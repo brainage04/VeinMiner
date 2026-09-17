@@ -1,0 +1,8 @@
+{
+  "method": "Read actual ZIP members from the installed Minecraft 26.2 merged client jar and compare SHA-256 to approved packed textures.",
+  "jar": "/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar",
+  "members": [
+    {"member": "assets/minecraft/textures/block/deepslate_diamond_ore.png", "sha256": "0acd146e99716a104c6053198fa51fe0d1ef464501c123ae9a56ba3f6f957dd7", "matches_approved_packed_texture": true},
+    {"member": "assets/minecraft/textures/item/diamond_pickaxe.png", "sha256": "dfec8e1467b335133521a42c8fde0f124ba7b5c45c0a84fba789736df4f92325", "matches_approved_packed_texture": true}
+  ]
+}

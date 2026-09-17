@@ -1,0 +1,124 @@
+{
+  "method": "Pillow decodes every final PNG. Rasterized Blender-projected actual mesh polygons permit 4px item AA and 36px ore halo; no unsupported cyan pixels elsewhere. Object geometry separately proves 24 straight cluster-bound curves and zero trails.",
+  "candidates": [
+    {
+      "label": "yaw-plus30-pitch30",
+      "PNG_opened_and_decoded": true,
+      "resolution": [
+        1024,
+        1024
+      ],
+      "unsupported_cyan_pixels_whole_frame": 0,
+      "anchor_RGB": [
+        12,
+        39,
+        35
+      ],
+      "background_RGB": [
+        26,
+        31,
+        38
+      ],
+      "contact_foreground_color_distance_RGB": 16.401219466856727,
+      "tip_to_anchor_distance_world": 0.0,
+      "composition_bounds_pixels": [
+        54.55403137207031,
+        131.3218994140625,
+        931.8399658203125,
+        900.6219482421875
+      ],
+      "visible_real_sidewall_quads": 36,
+      "projected_thickness_pixels": 32.35552786084297
+    },
+    {
+      "label": "yaw-plus40-pitch30",
+      "PNG_opened_and_decoded": true,
+      "resolution": [
+        1024,
+        1024
+      ],
+      "unsupported_cyan_pixels_whole_frame": 0,
+      "anchor_RGB": [
+        11,
+        38,
+        34
+      ],
+      "background_RGB": [
+        26,
+        31,
+        38
+      ],
+      "contact_foreground_color_distance_RGB": 17.029386365926403,
+      "tip_to_anchor_distance_world": 0.0,
+      "composition_bounds_pixels": [
+        54.732242584228516,
+        136.942138671875,
+        931.8399658203125,
+        900.6219482421875
+      ],
+      "visible_real_sidewall_quads": 36,
+      "projected_thickness_pixels": 33.43165653488515
+    },
+    {
+      "label": "yaw-plus50-pitch30",
+      "PNG_opened_and_decoded": true,
+      "resolution": [
+        1024,
+        1024
+      ],
+      "unsupported_cyan_pixels_whole_frame": 0,
+      "anchor_RGB": [
+        10,
+        37,
+        33
+      ],
+      "background_RGB": [
+        26,
+        31,
+        38
+      ],
+      "contact_foreground_color_distance_RGB": 17.804493814764857,
+      "tip_to_anchor_distance_world": 0.0,
+      "composition_bounds_pixels": [
+        65.21659088134766,
+        142.89886474609375,
+        931.8399658203125,
+        900.6219482421875
+      ],
+      "visible_real_sidewall_quads": 36,
+      "projected_thickness_pixels": 36.8093608923946
+    },
+    {
+      "label": "yaw-plus60-pitch30",
+      "PNG_opened_and_decoded": true,
+      "resolution": [
+        1024,
+        1024
+      ],
+      "unsupported_cyan_pixels_whole_frame": 0,
+      "anchor_RGB": [
+        9,
+        36,
+        32
+      ],
+      "background_RGB": [
+        26,
+        31,
+        38
+      ],
+      "contact_foreground_color_distance_RGB": 18.708286933869708,
+      "tip_to_anchor_distance_world": 0.0,
+      "composition_bounds_pixels": [
+        86.7454833984375,
+        149.01104736328125,
+        931.8399658203125,
+        900.6219482421875
+      ],
+      "visible_real_sidewall_quads": 36,
+      "projected_thickness_pixels": 41.59346874309094
+    }
+  ],
+  "only_rotation_changes": true,
+  "maximum_tip_to_anchor_distance_world": 0.0,
+  "common_nonrotation_serialized_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7"
+}

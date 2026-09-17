@@ -1,0 +1,12 @@
+{
+  "review_method": "Opened approved base PNG and all four final 1024x1024 PNGs individually through the image reader; separately decoded every PNG with Pillow and checked against projected actual mesh polygons.",
+  "files_reviewed": ["yaw-plus30-pitch30.png", "yaw-plus40-pitch30.png", "yaw-plus50-pitch30.png", "yaw-plus60-pitch30.png"],
+  "observations": [
+    "All four show the unchanged two-by-two-by-two ore cluster at the same camera position and size, with straight cyan glowing outer edges and block-grid seams.",
+    "The real voxel-thick diamond pickaxe visibly swivels between candidates. Its terminal edge stays touching the same upper-left-front ore corner.",
+    "All pickaxe and ore geometry remains inside the image; no clipping, motion lines, swing arcs or extra luminous strokes are visible.",
+    "Charcoal background, ore textures, cyan outline, camera and lighting remain the approved design. Any rendered occlusion/shadow changes result from the requested pickaxe rotation."
+  ],
+  "programmatic_support": {"images_decoded": 4, "geometry_inside_frame": true, "unsupported_cyan_pixels_whole_frame_each": 0, "tip_anchor_distance_each": 0.0, "visible_real_sidewall_quads_each": 36, "minimum_projected_pickaxe_thickness_pixels": 32.35552786084297},
+  "result": "Passed; no design substitutions."
+}

@@ -1,0 +1,98 @@
+[
+  {
+    "label": "yaw-plus30-pitch30",
+    "Blender": "5.1.1",
+    "engine": "Cycles",
+    "device": "CPU",
+    "samples": 64,
+    "threads": 1,
+    "duration_seconds": 51.27991397998994,
+    "resolution": [
+      1024,
+      1024
+    ],
+    "noaudio": true,
+    "display_server": false,
+    "affinity": [
+      2
+    ],
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+    "cgroup_controls": {
+      "cpu.weight": "20",
+      "cpu.max": "300000 100000"
+    },
+    "duration_definition": "Wall time around bpy.ops.render.render(write_still=False), including Cycles and compositor; excludes subsequent PNG encoding."
+  },
+  {
+    "label": "yaw-plus40-pitch30",
+    "Blender": "5.1.1",
+    "engine": "Cycles",
+    "device": "CPU",
+    "samples": 64,
+    "threads": 1,
+    "duration_seconds": 41.17384119000053,
+    "resolution": [
+      1024,
+      1024
+    ],
+    "noaudio": true,
+    "display_server": false,
+    "affinity": [
+      2
+    ],
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+    "cgroup_controls": {
+      "cpu.weight": "20",
+      "cpu.max": "300000 100000"
+    },
+    "duration_definition": "Wall time around bpy.ops.render.render(write_still=False), including Cycles and compositor; excludes subsequent PNG encoding."
+  },
+  {
+    "label": "yaw-plus50-pitch30",
+    "Blender": "5.1.1",
+    "engine": "Cycles",
+    "device": "CPU",
+    "samples": 64,
+    "threads": 1,
+    "duration_seconds": 40.98879893901176,
+    "resolution": [
+      1024,
+      1024
+    ],
+    "noaudio": true,
+    "display_server": false,
+    "affinity": [
+      2
+    ],
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+    "cgroup_controls": {
+      "cpu.weight": "20",
+      "cpu.max": "300000 100000"
+    },
+    "duration_definition": "Wall time around bpy.ops.render.render(write_still=False), including Cycles and compositor; excludes subsequent PNG encoding."
+  },
+  {
+    "label": "yaw-plus60-pitch30",
+    "Blender": "5.1.1",
+    "engine": "Cycles",
+    "device": "CPU",
+    "samples": 64,
+    "threads": 1,
+    "duration_seconds": 43.37279181799386,
+    "resolution": [
+      1024,
+      1024
+    ],
+    "noaudio": true,
+    "display_server": false,
+    "affinity": [
+      2
+    ],
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+    "cgroup_controls": {
+      "cpu.weight": "20",
+      "cpu.max": "300000 100000"
+    },
+    "duration_definition": "Wall time around bpy.ops.render.render(write_still=False), including Cycles and compositor; excludes subsequent PNG encoding."
+  }
+]

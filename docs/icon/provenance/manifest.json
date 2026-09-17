@@ -1,0 +1,34 @@
+[
+  {
+    "project": "VeinMiner",
+    "label": "Static anchored 2x2x2 \u2014 yaw +30, pitch 30",
+    "path": "blender-x/vein-miner/yaw-plus30-pitch30.png",
+    "method": "Blender 5.1.1; Cycles CPU; 64 samples; 1 thread; 1024x1024 PNG; 51.279914 seconds",
+    "source": "blender-v/05-yaw-plus20-pitch44.png and its packed .blend; genuine Minecraft 26.2 client-jar ore/pickaxe textures; source/texture-provenance.json",
+    "notes": "Only the pickaxe Object.rot[3] serialized bytes changed from approved base. T(anchor) @ Rz(yaw) @ Ry(pitch); tip-anchor distance exactly 0.0. Every other decompressed .blend byte identical, including camera/materials/ore/outline/mesh/packed textures/render settings. Real two-texel voxel extrusion, no motion lines. Adjacent .py and packed .blend; original internal source labels/filepath deliberately retained to preserve byte identity. Local-only, not Git committed."
+  },
+  {
+    "project": "VeinMiner",
+    "label": "Static anchored 2x2x2 \u2014 yaw +40, pitch 30",
+    "path": "blender-x/vein-miner/yaw-plus40-pitch30.png",
+    "method": "Blender 5.1.1; Cycles CPU; 64 samples; 1 thread; 1024x1024 PNG; 41.173841 seconds",
+    "source": "blender-v/05-yaw-plus20-pitch44.png and its packed .blend; genuine Minecraft 26.2 client-jar ore/pickaxe textures; source/texture-provenance.json",
+    "notes": "Only the pickaxe Object.rot[3] serialized bytes changed from approved base. T(anchor) @ Rz(yaw) @ Ry(pitch); tip-anchor distance exactly 0.0. Every other decompressed .blend byte identical, including camera/materials/ore/outline/mesh/packed textures/render settings. Real two-texel voxel extrusion, no motion lines. Adjacent .py and packed .blend; original internal source labels/filepath deliberately retained to preserve byte identity. Local-only, not Git committed."
+  },
+  {
+    "project": "VeinMiner",
+    "label": "Static anchored 2x2x2 \u2014 yaw +50, pitch 30",
+    "path": "blender-x/vein-miner/yaw-plus50-pitch30.png",
+    "method": "Blender 5.1.1; Cycles CPU; 64 samples; 1 thread; 1024x1024 PNG; 40.988799 seconds",
+    "source": "blender-v/05-yaw-plus20-pitch44.png and its packed .blend; genuine Minecraft 26.2 client-jar ore/pickaxe textures; source/texture-provenance.json",
+    "notes": "Only the pickaxe Object.rot[3] serialized bytes changed from approved base. T(anchor) @ Rz(yaw) @ Ry(pitch); tip-anchor distance exactly 0.0. Every other decompressed .blend byte identical, including camera/materials/ore/outline/mesh/packed textures/render settings. Real two-texel voxel extrusion, no motion lines. Adjacent .py and packed .blend; original internal source labels/filepath deliberately retained to preserve byte identity. Local-only, not Git committed."
+  },
+  {
+    "project": "VeinMiner",
+    "label": "Static anchored 2x2x2 \u2014 yaw +60, pitch 30",
+    "path": "blender-x/vein-miner/yaw-plus60-pitch30.png",
+    "method": "Blender 5.1.1; Cycles CPU; 64 samples; 1 thread; 1024x1024 PNG; 43.372792 seconds",
+    "source": "blender-v/05-yaw-plus20-pitch44.png and its packed .blend; genuine Minecraft 26.2 client-jar ore/pickaxe textures; source/texture-provenance.json",
+    "notes": "Only the pickaxe Object.rot[3] serialized bytes changed from approved base. T(anchor) @ Rz(yaw) @ Ry(pitch); tip-anchor distance exactly 0.0. Every other decompressed .blend byte identical, including camera/materials/ore/outline/mesh/packed textures/render settings. Real two-texel voxel extrusion, no motion lines. Adjacent .py and packed .blend; original internal source labels/filepath deliberately retained to preserve byte identity. Local-only, not Git committed."
+  }
+]

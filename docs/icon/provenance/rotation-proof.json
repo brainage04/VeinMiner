@@ -1,0 +1,176 @@
+{
+  "source_blend_sha256": "a370ed212eafe42cdbce31c09aa7c6754bfed100517f0688bd5c586edc21bdf6",
+  "all_other_serialized_properties_byte_identical_to_approved_base": true,
+  "method": "Compare every byte of decompressed source/candidate .blend, excluding only the 12 SDNA Object.rot[3] bytes. No save/rebuild, camera fit, output path, metadata, material or texture mutation.",
+  "common_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+  "maximum_tip_to_anchor_distance_world": 0.0,
+  "candidates": [
+    {
+      "label": "yaw-plus30-pitch30",
+      "byte_identity": {
+        "only_mutated_DNA_field": "Object[Diamond pickaxe rigid tip swivel].rot[3]",
+        "rotation_byte_interval_zero_based_half_open": [
+          377183,
+          377195
+        ],
+        "source_euler_xyz_radians": [
+          1.245764025270546e-08,
+          0.7679448127746582,
+          0.3490658104419708
+        ],
+        "candidate_euler_xyz_radians": [
+          0.0,
+          0.5235989093780518,
+          0.5235989093780518
+        ],
+        "all_other_serialized_bytes_identical": true,
+        "unchanged_byte_count": 780135,
+        "raw_blend_byte_count": 780147,
+        "source_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "candidate_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "changed_byte_offsets": [
+          377183,
+          377184,
+          377185,
+          377186,
+          377187,
+          377188,
+          377189,
+          377191,
+          377192,
+          377193,
+          377194
+        ],
+        "comparison_scope": "Entire decompressed .blend, not a selected property subset. Only 12 Object.rot bytes excluded; camera, mesh, UVs, materials, packed textures, compositor, lights, render settings, source labels, output filepath and UI state all retained."
+      },
+      "tip_to_anchor_distance_world": 0.0,
+      "yaw_degrees": 30,
+      "pitch_degrees": 30
+    },
+    {
+      "label": "yaw-plus40-pitch30",
+      "byte_identity": {
+        "only_mutated_DNA_field": "Object[Diamond pickaxe rigid tip swivel].rot[3]",
+        "rotation_byte_interval_zero_based_half_open": [
+          377183,
+          377195
+        ],
+        "source_euler_xyz_radians": [
+          1.245764025270546e-08,
+          0.7679448127746582,
+          0.3490658104419708
+        ],
+        "candidate_euler_xyz_radians": [
+          0.0,
+          0.5235989093780518,
+          0.698131799697876
+        ],
+        "all_other_serialized_bytes_identical": true,
+        "unchanged_byte_count": 780135,
+        "raw_blend_byte_count": 780147,
+        "source_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "candidate_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "changed_byte_offsets": [
+          377183,
+          377184,
+          377185,
+          377186,
+          377187,
+          377188,
+          377189,
+          377191,
+          377193,
+          377194
+        ],
+        "comparison_scope": "Entire decompressed .blend, not a selected property subset. Only 12 Object.rot bytes excluded; camera, mesh, UVs, materials, packed textures, compositor, lights, render settings, source labels, output filepath and UI state all retained."
+      },
+      "tip_to_anchor_distance_world": 0.0,
+      "yaw_degrees": 40,
+      "pitch_degrees": 30
+    },
+    {
+      "label": "yaw-plus50-pitch30",
+      "byte_identity": {
+        "only_mutated_DNA_field": "Object[Diamond pickaxe rigid tip swivel].rot[3]",
+        "rotation_byte_interval_zero_based_half_open": [
+          377183,
+          377195
+        ],
+        "source_euler_xyz_radians": [
+          1.245764025270546e-08,
+          0.7679448127746582,
+          0.3490658104419708
+        ],
+        "candidate_euler_xyz_radians": [
+          0.0,
+          0.5235989093780518,
+          0.8726646900177002
+        ],
+        "all_other_serialized_bytes_identical": true,
+        "unchanged_byte_count": 780135,
+        "raw_blend_byte_count": 780147,
+        "source_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "candidate_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "changed_byte_offsets": [
+          377183,
+          377184,
+          377185,
+          377186,
+          377187,
+          377188,
+          377189,
+          377191,
+          377192,
+          377193,
+          377194
+        ],
+        "comparison_scope": "Entire decompressed .blend, not a selected property subset. Only 12 Object.rot bytes excluded; camera, mesh, UVs, materials, packed textures, compositor, lights, render settings, source labels, output filepath and UI state all retained."
+      },
+      "tip_to_anchor_distance_world": 0.0,
+      "yaw_degrees": 50,
+      "pitch_degrees": 30
+    },
+    {
+      "label": "yaw-plus60-pitch30",
+      "byte_identity": {
+        "only_mutated_DNA_field": "Object[Diamond pickaxe rigid tip swivel].rot[3]",
+        "rotation_byte_interval_zero_based_half_open": [
+          377183,
+          377195
+        ],
+        "source_euler_xyz_radians": [
+          1.245764025270546e-08,
+          0.7679448127746582,
+          0.3490658104419708
+        ],
+        "candidate_euler_xyz_radians": [
+          0.0,
+          0.5235989093780518,
+          1.0471975803375244
+        ],
+        "all_other_serialized_bytes_identical": true,
+        "unchanged_byte_count": 780135,
+        "raw_blend_byte_count": 780147,
+        "source_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "candidate_nonrotation_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+        "changed_byte_offsets": [
+          377183,
+          377184,
+          377185,
+          377186,
+          377187,
+          377188,
+          377189,
+          377191,
+          377192,
+          377193,
+          377194
+        ],
+        "comparison_scope": "Entire decompressed .blend, not a selected property subset. Only 12 Object.rot bytes excluded; camera, mesh, UVs, materials, packed textures, compositor, lights, render settings, source labels, output filepath and UI state all retained."
+      },
+      "tip_to_anchor_distance_world": 0.0,
+      "yaw_degrees": 60,
+      "pitch_degrees": 30
+    }
+  ]
+}

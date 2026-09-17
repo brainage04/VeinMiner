@@ -1,0 +1,14 @@
+{
+  "status": "Complete",
+  "write_boundary": "Only round3/blender-x/vein-miner and its descendants were written.",
+  "tracked_file_edits": "None performed; no Git commands or commits used.",
+  "approved_base": "Read only. Original approved .blend SHA-256 remained a370ed212eafe42cdbce31c09aa7c6754bfed100517f0688bd5c586edc21bdf6 after rendering.",
+  "retained": ["Four angle-named 1024x1024 PNGs", "Four matching packed .blend files", "Four adjacent Python entrypoints and common renderer", "Immutable copied approved .blend and provenance", "Byte-identity, geometry, decoded-image and visual-review evidence", "Manifest, blockers, reproduction recipe and render report", "Review-only contact sheet and geometry-mask diagnostics"],
+  "temporary_files": "No throwaway files, scene backups or __pycache__ directories created; no cleanup deletion required.",
+  "processes": {"name": "vein-swivel-x7", "state": "Exited", "exit_code": 0, "sequential_render_count": 4, "remaining_owned_processes": 0, "exclusive_slot_released_to_Main": true},
+  "resource_evidence": {"Blender": "5.1.1", "engine": "Cycles", "device": "CPU", "samples": 64, "render_threads": 1, "cpu_affinity": [2], "cpu_weight": 20, "cpu_max": "300000 100000", "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service", "noaudio": true, "display_environment_empty": true, "display_server_started": false, "audio_sink_started": false, "GPU_render_requested": false},
+  "render_duration_seconds": {"yaw-plus30-pitch30": 51.27991397998994, "yaw-plus40-pitch30": 41.17384119000053, "yaw-plus50-pitch30": 40.98879893901176, "yaw-plus60-pitch30": 43.37279181799386},
+  "validation": "All actual candidate .blend files were opened by Blender, geometry/packed textures asserted, and rendered. Pillow decoded all four final images and verified contact/no unsupported cyan strokes; each PNG also visually reviewed. Independent byte comparison confirmed every nonrotation source byte remained identical.",
+  "launch_note": "The readiness banner appeared on exit rather than startup, so the initial banner wait timed out. Actual readiness was subsequently observed via RENDER_COMPLETE log; the process completed all four renders and exited 0. No render failure or outstanding blocker.",
+  "blockers": []
+}

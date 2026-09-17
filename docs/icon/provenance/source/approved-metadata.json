@@ -1,0 +1,525 @@
+{
+  "label": "05-yaw-plus20-pitch44",
+  "source": "../blender-s/03-cyan-selection.png",
+  "geometry": {
+    "ore_blocks": 8,
+    "grid_cells": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        1
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        1
+      ],
+      [
+        1,
+        1,
+        0
+      ],
+      [
+        1,
+        1,
+        1
+      ]
+    ],
+    "cluster_bounds": [
+      [
+        0.008,
+        0.008,
+        0.008
+      ],
+      [
+        1.992,
+        1.992,
+        1.992
+      ]
+    ],
+    "cluster_dimensions": [
+      1.984,
+      1.984,
+      1.984
+    ],
+    "individual_block_dimensions": [
+      0.984,
+      0.984,
+      0.984
+    ],
+    "anchor_world": [
+      0.00800000037997961,
+      0.00800000037997961,
+      1.9919999837875366
+    ],
+    "tip_local": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "tip_world": [
+      0.00800000037997961,
+      0.00800000037997961,
+      1.9919999837875366
+    ],
+    "tip_anchor_distance_world": 0.0,
+    "tip_is_midpoint_of_real_mesh_edge": true,
+    "tip_edge_vertex_errors": [
+      0.0,
+      0.0
+    ],
+    "minimum_pickaxe_world_z": 1.9919999837875366,
+    "no_penetration_below_contact_plane": true,
+    "rotation": {
+      "yaw_about_world_Z_degrees": 20.0,
+      "pitch_about_world_Y_degrees": 44.0,
+      "order": "T(anchor) @ Rz(yaw) @ Ry(pitch)"
+    },
+    "handle_screen_angle_degrees_up_from_left": 38.50523265401113,
+    "anchor_pixel": [
+      428.7113037109375,
+      489.09979248046875
+    ],
+    "pickaxe_opaque_texels": 68,
+    "pickaxe_depth_texels": 2.0,
+    "pickaxe_depth_world": 0.34,
+    "pickaxe_mesh_faces": 208,
+    "selection_curves": [
+      {
+        "name": "Selection outer 0 0 0",
+        "endpoints": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            2.0,
+            0.0,
+            0.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 0 0 2",
+        "endpoints": [
+          [
+            0.0,
+            0.0,
+            2.0
+          ],
+          [
+            2.0,
+            0.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 0 2 0",
+        "endpoints": [
+          [
+            0.0,
+            2.0,
+            0.0
+          ],
+          [
+            2.0,
+            2.0,
+            0.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 0 2 2",
+        "endpoints": [
+          [
+            0.0,
+            2.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 1 0 0",
+        "endpoints": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            2.0,
+            0.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 1 0 2",
+        "endpoints": [
+          [
+            0.0,
+            0.0,
+            2.0
+          ],
+          [
+            0.0,
+            2.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 1 2 0",
+        "endpoints": [
+          [
+            2.0,
+            0.0,
+            0.0
+          ],
+          [
+            2.0,
+            2.0,
+            0.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 1 2 2",
+        "endpoints": [
+          [
+            2.0,
+            0.0,
+            2.0
+          ],
+          [
+            2.0,
+            2.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 2 0 0",
+        "endpoints": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 2 0 2",
+        "endpoints": [
+          [
+            0.0,
+            2.0,
+            0.0
+          ],
+          [
+            0.0,
+            2.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 2 2 0",
+        "endpoints": [
+          [
+            2.0,
+            0.0,
+            0.0
+          ],
+          [
+            2.0,
+            0.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection outer 2 2 2",
+        "endpoints": [
+          [
+            2.0,
+            2.0,
+            0.0
+          ],
+          [
+            2.0,
+            2.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 0 0 1",
+        "endpoints": [
+          [
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            2.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 0 0 2",
+        "endpoints": [
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 0 2 1",
+        "endpoints": [
+          [
+            2.0,
+            0.0,
+            1.0
+          ],
+          [
+            2.0,
+            2.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 0 2 2",
+        "endpoints": [
+          [
+            2.0,
+            1.0,
+            0.0
+          ],
+          [
+            2.0,
+            1.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 1 0 0",
+        "endpoints": [
+          [
+            0.0,
+            0.0,
+            1.0
+          ],
+          [
+            2.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 1 0 2",
+        "endpoints": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 1 2 0",
+        "endpoints": [
+          [
+            0.0,
+            2.0,
+            1.0
+          ],
+          [
+            2.0,
+            2.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 1 2 2",
+        "endpoints": [
+          [
+            1.0,
+            2.0,
+            0.0
+          ],
+          [
+            1.0,
+            2.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 2 0 0",
+        "endpoints": [
+          [
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            2.0,
+            1.0,
+            0.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 2 0 1",
+        "endpoints": [
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            2.0,
+            0.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 2 2 0",
+        "endpoints": [
+          [
+            0.0,
+            1.0,
+            2.0
+          ],
+          [
+            2.0,
+            1.0,
+            2.0
+          ]
+        ]
+      },
+      {
+        "name": "Selection seam 2 2 1",
+        "endpoints": [
+          [
+            1.0,
+            0.0,
+            2.0
+          ],
+          [
+            1.0,
+            2.0,
+            2.0
+          ]
+        ]
+      }
+    ],
+    "motion_swing_lightning_curves": 0,
+    "animated_objects": 0,
+    "composition_bounds_pixels": [
+      92.15985107421875,
+      129.6851806640625,
+      931.8399658203125,
+      900.6219482421875
+    ],
+    "nonrotation_invariant_sha256": "0261b95412d52c8f0e4ba8fcc449406cc6306166f0b0355682a0712c0b7e90c8",
+    "pickaxe_mesh_sha256": "340b00a95fe49534787cf0ea935eff6cea90dd4b8aa57f9644f10934e52968d7"
+  },
+  "packed_textures": [
+    {
+      "name": "deepslate_diamond_ore.png",
+      "packed": true,
+      "sha256": "0acd146e99716a104c6053198fa51fe0d1ef464501c123ae9a56ba3f6f957dd7"
+    },
+    {
+      "name": "diamond_pickaxe.png",
+      "packed": true,
+      "sha256": "dfec8e1467b335133521a42c8fde0f124ba7b5c45c0a84fba789736df4f92325"
+    }
+  ],
+  "reproduction": {
+    "entrypoint": "05-yaw-plus20-pitch44.py",
+    "implementation": "render_scenes.py",
+    "script_sha256": "ac236c5ed9643136acbca0783b7d578ea92b5db43dca9b623e6e29adec594050",
+    "local_only_not_git_committed": "Explicit no-commit / no-tracked-file-edit portfolio policy."
+  },
+  "renderer": {
+    "Blender": "5.1.1",
+    "engine": "Cycles",
+    "device": "CPU",
+    "samples": 64,
+    "threads": 1,
+    "duration_seconds": 41.190468646003865,
+    "resolution": [
+      1024,
+      1024
+    ],
+    "noaudio": true,
+    "display_server": false,
+    "GPU_allocated": false,
+    "affinity": [
+      2
+    ],
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/render-blender.service",
+    "resource_policy": "CPU2 affinity, one thread; shared render-blender.service CPUQuota 300%, CPUWeight20 (watchdog joins process)."
+  },
+  "PNG": {
+    "sha256": "a6e3308d3511ae9026aa1dcb863264fc855f6475773812fa852ca393a5db16c7",
+    "dimensions": [
+      1024,
+      1024
+    ]
+  }
+}

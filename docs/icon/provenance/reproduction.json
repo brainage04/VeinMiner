@@ -1,0 +1,15 @@
+{
+  "local_only": true,
+  "git_commit": "None. Explicit portfolio no-commit/no-tracked-file-edit policy takes precedence; all authoring scripts are saved adjacent to deliverables.",
+  "working_directory": "round3/blender-x/vein-miner",
+  "render_command": "nice -n 19 nix shell nixpkgs#blender --command taskset -c 2 blender --background -noaudio --threads 1 --python render_scenes.py",
+  "environment": {"DISPLAY": "", "WAYLAND_DISPLAY": "", "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "PYTHONDONTWRITEBYTECODE": "1"},
+  "single_candidate": "Replace render_scenes.py with the adjacent angle-named Python entrypoint.",
+  "image_verification_command": "PYTHONPATH=/nix/store/4v9j9wbzyhrlx9980ygbr812313mazy0-python3.13-pillow-12.3.0/lib/python3.13/site-packages python3 verify_images.py",
+  "source_blend_sha256": "a370ed212eafe42cdbce31c09aa7c6754bfed100517f0688bd5c586edc21bdf6",
+  "render_script_sha256": "e60621a2851900dbab23d465bcd8b273bfd698b71393afdc8f63fab698928293",
+  "byte_identity_method": "Parse actual SDNA from approved packed .blend, replace only pickaxe Object.rot[3] using XYZ Euler derived from T(anchor) @ Rz(yaw) @ Ry(pitch). Write candidate .blend without Blender reserialization. Open actual candidate in Blender to validate and render. Every other 780135 byte of decompressed source is preserved, including both genuine packed textures.",
+  "nonrotation_serialized_sha256": "5b1b700177395c4608460940ea42a407f943e1cfb7c7741a4602760f8a15a4a7",
+  "internal_source_labels_and_output_filepath": "Intentionally retained byte-for-byte from approved base; use entrypoint scripts to reproduce candidate output. Render Result is saved to the new PNG without mutating scene.render.filepath.",
+  "resource_policy": "One Blender process, four sequential renders; CPU-only Cycles; inherited 64 samples and 1 render thread; taskset CPU2; shared watchdog render-blender cgroup CPUWeight20 and 3-core cap. No display, audio or GPU device allocated."
+}
