@@ -25,6 +25,7 @@ class VeinMinerConfigTest {
         config.exhaustionCostPerBlock = Float.NaN;
         config.defaultActivationMode = null;
         config.adjacencyMode = null;
+        config.allowedTags = null;
         config.whitelist = new LinkedHashSet<>(List.of("minecraft:diamond_ore", "not valid"));
 
         List<String> corrections = config.normalize();
@@ -39,6 +40,7 @@ class VeinMinerConfigTest {
         assertEquals(0.005F, config.exhaustionCostPerBlock);
         assertEquals(ActivationMode.WHILE_SNEAKING, config.defaultActivationMode);
         assertEquals(AdjacencyMode.FACES_EDGES_CORNERS, config.adjacencyMode);
+        assertEquals(List.of("vein_miner:ores", "vein_miner:trees"), config.allowedTags.stream().toList());
         assertEquals(List.of("minecraft:diamond_ore"), config.whitelistAsSortedList());
     }
 
