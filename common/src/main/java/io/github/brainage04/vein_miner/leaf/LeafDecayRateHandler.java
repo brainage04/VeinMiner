@@ -2,6 +2,11 @@ package io.github.brainage04.vein_miner.leaf;
 
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -13,25 +18,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gamerules.GameRules;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 public final class LeafDecayRateHandler {
     private static final int RANDOM_TICK_SECTION_VOLUME = 16 * 16 * 16;
 
     private static final List<PendingLeafDecay> pendingLeafDecays = new ArrayList<>();
     private static final Set<LeafDecayKey> queuedLeafDecays = new HashSet<>();
 
-    private LeafDecayRateHandler() {
-    }
+    private LeafDecayRateHandler() {}
+
     public static void shutdown(MinecraftServer server) {
         pendingLeafDecays.clear();
         queuedLeafDecays.clear();
     }
-
 
     public static boolean shouldCancelVanillaDecay(BlockState state) {
         return getLeafDecaySpeedMultiplier() > 1 && isDecayingLeaf(state);
@@ -54,11 +52,9 @@ public final class LeafDecayRateHandler {
             return;
         }
 
-        pendingLeafDecays.add(new PendingLeafDecay(
-                level.dimension(),
-                immutablePos,
-                level.getServer().getTickCount() + delay
-        ));
+        pendingLeafDecays.add(
+                new PendingLeafDecay(
+                        level.dimension(), immutablePos, level.getServer().getTickCount() + delay));
     }
 
     public static void tick(MinecraftServer server) {
@@ -73,14 +69,15 @@ public final class LeafDecayRateHandler {
             if (pendingDecay.executeAtTick > currentTick) {
                 continue;
             }
+            iterator.remove();
+            queuedLeafDecays.remove(
+                    new LeafDecayKey(pendingDecay.dimension, pendingDecay.leafPos.asLong()));
 
             ServerLevel level = server.getLevel(pendingDecay.dimension);
             if (level == null || !level.isLoaded(pendingDecay.leafPos)) {
                 continue;
             }
 
-            iterator.remove();
-            queuedLeafDecays.remove(new LeafDecayKey(pendingDecay.dimension, pendingDecay.leafPos.asLong()));
             runQueuedLeafDecay(level, pendingDecay.leafPos);
         }
     }
@@ -112,7 +109,11 @@ public final class LeafDecayRateHandler {
         }
 
         double random = level.getRandom().nextDouble();
-        return 1 + (int) Math.floor(Math.log(1.0D - random) / Math.log(1.0D - scaledDecayChancePerTick));
+        return 1
+                + (int)
+                        Math.floor(
+                                Math.log(1.0D - random)
+                                        / Math.log(1.0D - scaledDecayChancePerTick));
     }
 
     private static int getLeafDecaySpeedMultiplier() {
@@ -133,9 +134,8 @@ public final class LeafDecayRateHandler {
                 && state.getValue(BlockStateProperties.DISTANCE) == LeavesBlock.DECAY_DISTANCE;
     }
 
-    private record LeafDecayKey(ResourceKey<Level> dimension, long leafPos) {
-    }
+    private record LeafDecayKey(ResourceKey<Level> dimension, long leafPos) {}
 
-    private record PendingLeafDecay(ResourceKey<Level> dimension, BlockPos leafPos, int executeAtTick) {
-    }
+    private record PendingLeafDecay(
+            ResourceKey<Level> dimension, BlockPos leafPos, int executeAtTick) {}
 }
