@@ -6,7 +6,7 @@ Vein Miner is a server-side Fabric and NeoForge mod that mines connected ore and
 
 - Minecraft 26.2
 - Fabric Loader 0.19.3 or newer with Fabric API, or NeoForge 26.2.0.23-beta or newer
-- BrainageLib 1.0.0 or newer
+- BrainageLib 1.0.1 or newer
 - Java 25 or newer
 
 ## Migrating from the Fabric-only release
