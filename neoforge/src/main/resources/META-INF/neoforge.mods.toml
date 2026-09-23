@@ -6,6 +6,7 @@ license="MIT"
 modId="vein_miner"
 version="${version}"
 displayName="Vein Miner"
+logoFile="assets/vein_miner/icon.png"
 description='''Mines connected ore and tree blocks using per-player activation and selection controls.'''
 authors="brainage04"
 
