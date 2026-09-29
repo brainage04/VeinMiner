@@ -7,6 +7,7 @@ import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.AdjacencyMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import io.github.brainage04.vein_miner.gametest.VeinMinerCommandGameTests;
 import io.github.brainage04.vein_miner.leaf.LeafDecayRateHandler;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import java.io.IOException;
@@ -193,6 +194,11 @@ public class VeinMinerPolicyGameTest {
             resetPlayer(player);
         }
         context.succeed();
+    }
+
+    @GameTest
+    public void selectionTagCommandsAcceptNamespacedIds(GameTestHelper context) {
+        VeinMinerCommandGameTests.selectionTagCommandsAcceptNamespacedIds(context);
     }
 
     @GameTest

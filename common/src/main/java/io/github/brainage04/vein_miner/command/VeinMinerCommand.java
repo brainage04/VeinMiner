@@ -3,8 +3,10 @@ package io.github.brainage04.vein_miner.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.github.brainage04.brainagelib.feedback.ModFeedback;
 import io.github.brainage04.vein_miner.VeinMiner;
 import io.github.brainage04.vein_miner.config.ActivationMode;
@@ -15,19 +17,25 @@ import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.blocks.BlockStateArgument;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static net.minecraft.commands.Commands.argument;
@@ -157,22 +165,26 @@ public final class VeinMinerCommand {
                                 .then(literal("tags")
                                         .then(literal("allow")
                                                 .then(literal("add")
-                                                        .then(argument("tag", StringArgumentType.word())
-                                                                .executes(context -> addGlobalTag(context.getSource(), StringArgumentType.getString(context, "tag"), false))))
+                                                        .then(argument("tag", IdentifierArgument.id())
+                                                                .suggests(VeinMinerCommand::suggestBlockTags)
+                                                                .executes(context -> addGlobalTag(context.getSource(), IdentifierArgument.getId(context, "tag"), false))))
                                                 .then(literal("remove")
-                                                        .then(argument("tag", StringArgumentType.word())
-                                                                .executes(context -> removeGlobalTag(context.getSource(), StringArgumentType.getString(context, "tag"), false))))
+                                                        .then(argument("tag", IdentifierArgument.id())
+                                                                .suggests((context, builder) -> suggestSelectedTags(builder, false))
+                                                                .executes(context -> removeGlobalTag(context.getSource(), IdentifierArgument.getId(context, "tag"), false))))
                                                 .then(literal("list")
                                                         .executes(context -> listSelection(context.getSource(), "Allowed block tags", sorted(VeinMinerConfigManager.getConfig().allowedTags), 1))
                                                         .then(argument("page", IntegerArgumentType.integer(1))
                                                                 .executes(context -> listSelection(context.getSource(), "Allowed block tags", sorted(VeinMinerConfigManager.getConfig().allowedTags), IntegerArgumentType.getInteger(context, "page"))))))
                                         .then(literal("deny")
                                                 .then(literal("add")
-                                                        .then(argument("tag", StringArgumentType.word())
-                                                                .executes(context -> addGlobalTag(context.getSource(), StringArgumentType.getString(context, "tag"), true))))
+                                                        .then(argument("tag", IdentifierArgument.id())
+                                                                .suggests(VeinMinerCommand::suggestBlockTags)
+                                                                .executes(context -> addGlobalTag(context.getSource(), IdentifierArgument.getId(context, "tag"), true))))
                                                 .then(literal("remove")
-                                                        .then(argument("tag", StringArgumentType.word())
-                                                                .executes(context -> removeGlobalTag(context.getSource(), StringArgumentType.getString(context, "tag"), true))))
+                                                        .then(argument("tag", IdentifierArgument.id())
+                                                                .suggests((context, builder) -> suggestSelectedTags(builder, true))
+                                                                .executes(context -> removeGlobalTag(context.getSource(), IdentifierArgument.getId(context, "tag"), true))))
                                                 .then(literal("list")
                                                         .executes(context -> listSelection(context.getSource(), "Denied block tags", sorted(VeinMinerConfigManager.getConfig().deniedTags), 1))
                                                         .then(argument("page", IntegerArgumentType.integer(1))
@@ -395,11 +407,25 @@ public final class VeinMinerCommand {
         return saveSelectionChange(source, "Removed %s from the %s block selection.", id, denied ? "denied" : "allowed");
     }
 
-    private static int addGlobalTag(CommandSourceStack source, String tagInput, boolean denied) {
-        Identifier tagId = Identifier.tryParse(tagInput);
-        if (tagId == null) {
-            return FEEDBACK.failure(source, "Invalid block tag identifier: %s", tagInput);
-        }
+    private static CompletableFuture<Suggestions> suggestBlockTags(
+            CommandContext<CommandSourceStack> context,
+            SuggestionsBuilder builder
+    ) {
+        return SharedSuggestionProvider.suggestResource(
+                context.getSource().registryAccess().lookupOrThrow(Registries.BLOCK).listTagIds().map(TagKey::location),
+                builder
+        );
+    }
+
+    private static CompletableFuture<Suggestions> suggestSelectedTags(SuggestionsBuilder builder, boolean denied) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        return SharedSuggestionProvider.suggestResource(
+                (denied ? config.deniedTags : config.allowedTags).stream().map(Identifier::tryParse).filter(Objects::nonNull),
+                builder
+        );
+    }
+
+    private static int addGlobalTag(CommandSourceStack source, Identifier tagId, boolean denied) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         LinkedHashSet<String> selection = denied ? config.deniedTags : config.allowedTags;
         String value = tagId.toString();
@@ -414,11 +440,7 @@ public final class VeinMinerCommand {
         return saveSelectionChange(source, "%s block tag #%s.", denied ? "Denied" : "Allowed", tagId);
     }
 
-    private static int removeGlobalTag(CommandSourceStack source, String tagInput, boolean denied) {
-        Identifier tagId = Identifier.tryParse(tagInput);
-        if (tagId == null) {
-            return FEEDBACK.failure(source, "Invalid block tag identifier: %s", tagInput);
-        }
+    private static int removeGlobalTag(CommandSourceStack source, Identifier tagId, boolean denied) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         LinkedHashSet<String> selection = denied ? config.deniedTags : config.allowedTags;
         if (!selection.remove(tagId.toString())) {

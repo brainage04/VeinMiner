@@ -2,6 +2,7 @@ package io.github.brainage04.vein_miner;
 
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import io.github.brainage04.vein_miner.gametest.VeinMinerCommandGameTests;
 import java.util.LinkedHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -56,6 +57,10 @@ public final class VeinMinerNeoForgeGameTest {
                 event,
                 "better_tree_mining_connects_stripped_wood_family",
                 policyTests::betterTreeMiningConnectsStrippedWoodFamily);
+        register(
+                event,
+                "selection_tag_commands_accept_namespaced_ids",
+                VeinMinerCommandGameTests::selectionTagCommandsAcceptNamespacedIds);
         register(
                 event,
                 "deny_tag_overrides_allowed_block",

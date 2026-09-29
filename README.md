@@ -80,7 +80,7 @@ Operator-only controls are under `/veinminer admin`.
 - `/veinminer admin selection tags deny add|remove <tag-id>`
 - `/veinminer admin selection tags deny list [page]`
 
-Tag arguments use identifiers without `#`, for example `c:ores` or `minecraft:logs`.
+Tag arguments use identifiers without `#`, for example `c:ores` or `minecraft:logs`; an id without a namespace, such as `logs`, means `minecraft:logs`. `add` tab-completes the server's block tags and `remove` completes the tags currently in that selection.
 
 ## Configuration files
 
