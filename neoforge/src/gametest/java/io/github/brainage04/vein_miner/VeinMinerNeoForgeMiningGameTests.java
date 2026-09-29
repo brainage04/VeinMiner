@@ -7,13 +7,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.fml.ModList;
 
 public class VeinMinerNeoForgeMiningGameTests {
@@ -38,28 +38,24 @@ public class VeinMinerNeoForgeMiningGameTests {
             context.setBlock(ORIGIN_POS, Blocks.DIAMOND_ORE);
             context.setBlock(CONNECTED_POS, Blocks.DIAMOND_ORE);
 
-            if (!player.gameMode.destroyBlock(context.absolutePos(ORIGIN_POS))) {
-                throw new AssertionError("Expected the player to destroy the vein origin.");
-            }
+            context.assertTrue(
+                    player.gameMode.destroyBlock(context.absolutePos(ORIGIN_POS)),
+                    "Expected the player to destroy the vein origin.");
 
             context.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN_POS);
             context.assertBlockNotPresent(Blocks.DIAMOND_ORE, CONNECTED_POS);
 
-            context.runAtTickTime(
-                    1,
+            boolean telekinesis = ModList.get().isLoaded("telekinesis");
+            context.succeedWhen(
                     () -> {
-                        int inventoryDiamonds = countInventoryItem(player, Items.DIAMOND);
-                        int worldDiamonds = countWorldItem(context, Items.DIAMOND);
-                        if (ModList.get().isLoaded("telekinesis")) {
-                            assertCount(
-                                    "inventory diamonds with Telekinesis", inventoryDiamonds, 2);
-                            assertCount("world diamonds with Telekinesis", worldDiamonds, 0);
-                        } else {
-                            assertCount(
-                                    "inventory diamonds without Telekinesis", inventoryDiamonds, 0);
-                            assertCount("world diamonds without Telekinesis", worldDiamonds, 2);
-                        }
-                        context.succeed();
+                        context.assertValueEqual(
+                                countInventoryItem(player, Items.DIAMOND),
+                                telekinesis ? 2 : 0,
+                                "inventory diamonds");
+                        context.assertValueEqual(
+                                countWorldItem(context, Items.DIAMOND),
+                                telekinesis ? 0 : 2,
+                                "world diamonds");
                     });
         } finally {
             config.enableVeinMining = previousEnabled;
@@ -90,38 +86,24 @@ public class VeinMinerNeoForgeMiningGameTests {
             context.setBlock(ORIGIN_POS, Blocks.DIAMOND_ORE);
             context.setBlock(CONNECTED_POS, Blocks.DEEPSLATE_DIAMOND_ORE);
 
-            if (!player.gameMode.destroyBlock(context.absolutePos(ORIGIN_POS))) {
-                throw new AssertionError("Expected the player to destroy the mixed vein origin.");
-            }
+            context.assertTrue(
+                    player.gameMode.destroyBlock(context.absolutePos(ORIGIN_POS)),
+                    "Expected the player to destroy the mixed vein origin.");
 
             context.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN_POS);
             context.assertBlockNotPresent(Blocks.DEEPSLATE_DIAMOND_ORE, CONNECTED_POS);
 
-            context.runAtTickTime(
-                    1,
+            boolean telekinesis = ModList.get().isLoaded("telekinesis");
+            context.succeedWhen(
                     () -> {
-                        int inventoryDiamonds = countInventoryItem(player, Items.DIAMOND);
-                        int worldDiamonds = countWorldItem(context, Items.DIAMOND);
-                        if (ModList.get().isLoaded("telekinesis")) {
-                            assertCount(
-                                    "inventory diamonds from a mixed vein with Telekinesis",
-                                    inventoryDiamonds,
-                                    2);
-                            assertCount(
-                                    "world diamonds from a mixed vein with Telekinesis",
-                                    worldDiamonds,
-                                    0);
-                        } else {
-                            assertCount(
-                                    "inventory diamonds from a mixed vein without Telekinesis",
-                                    inventoryDiamonds,
-                                    0);
-                            assertCount(
-                                    "world diamonds from a mixed vein without Telekinesis",
-                                    worldDiamonds,
-                                    2);
-                        }
-                        context.succeed();
+                        context.assertValueEqual(
+                                countInventoryItem(player, Items.DIAMOND),
+                                telekinesis ? 2 : 0,
+                                "inventory diamonds from a mixed vein");
+                        context.assertValueEqual(
+                                countWorldItem(context, Items.DIAMOND),
+                                telekinesis ? 0 : 2,
+                                "world diamonds from a mixed vein");
                     });
         } finally {
             config.enableVeinMining = previousEnabled;
@@ -142,24 +124,15 @@ public class VeinMinerNeoForgeMiningGameTests {
         return count;
     }
 
+    /// Counts dropped items inside this test's own structure, so neighbouring tests cannot leak in.
     private static int countWorldItem(GameTestHelper context, Item item) {
-        BlockPos origin = context.absolutePos(ORIGIN_POS);
-        AABB bounds = new AABB(origin).inflate(5.0D);
         int count = 0;
-        for (ItemEntity itemEntity :
-                context.getLevel().getEntitiesOfClass(ItemEntity.class, bounds)) {
+        for (ItemEntity itemEntity : context.getEntities(EntityTypes.ITEM)) {
             ItemStack stack = itemEntity.getItem();
             if (stack.is(item)) {
                 count += stack.getCount();
             }
         }
         return count;
-    }
-
-    private static void assertCount(String description, int actual, int expected) {
-        if (actual != expected) {
-            throw new AssertionError(
-                    "Expected " + expected + " " + description + ", found " + actual + ".");
-        }
     }
 }

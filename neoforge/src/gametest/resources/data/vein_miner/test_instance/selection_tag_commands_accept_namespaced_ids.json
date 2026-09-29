@@ -1,6 +1,6 @@
 {
   "environment": "minecraft:default",
-  "structure": "minecraft:empty",
+  "structure": "vein_miner:empty",
   "max_ticks": 20,
   "type": "minecraft:function",
   "function": "vein_miner:selection_tag_commands_accept_namespaced_ids"
