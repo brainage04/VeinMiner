@@ -1,6 +1,6 @@
 {
   "environment": "minecraft:default",
-  "structure": "vein_miner:empty",
+  "structure":"fabricmoddingconventions:empty",
   "max_ticks": 20,
   "type": "minecraft:function",
   "function": "vein_miner:selection_tag_commands_accept_namespaced_ids"
