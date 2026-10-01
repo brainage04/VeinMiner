@@ -1,6 +1,7 @@
 modLoader="javafml"
 loaderVersion="[11,)"
 license="MIT"
+issueTrackerURL="https://github.com/brainage04/VeinMiner/issues"
 
 [[mods]]
 modId="vein_miner"
@@ -9,6 +10,7 @@ displayName="Vein Miner"
 iconFile="assets/vein_miner/icon.png"
 description='''Mines connected ore and tree blocks using per-player activation and selection controls.'''
 authors="brainage04"
+displayURL="https://github.com/brainage04/VeinMiner"
 
 [[dependencies.vein_miner]]
 modId="neoforge"
