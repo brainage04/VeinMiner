@@ -9,13 +9,6 @@ Vein Miner is a server-side Fabric and NeoForge mod that mines connected ore and
 - BrainageLib 1.0.1 or newer
 - Java 25 or newer
 
-## Migrating from the Fabric-only release
-
-- Install exactly one Vein Miner JAR matching the server loader: the Fabric JAR requires Fabric API; the NeoForge JAR requires NeoForge. Do not install both variants together.
-- Remove the previous Vein Miner JAR before switching loaders. The mod ID remains `vein_miner`, and its `config/vein_miner.json` configuration and world `vein-miner-players.json` player settings retain their existing paths.
-- This is server-side on both loaders; vanilla clients do not need Vein Miner or its dependencies. Install the matching loader-specific BrainageLib dependency on the server.
-- Repository builds run `./gradlew build` and collect both production loader artifacts in the root `build/libs` directory.
-
 ## Behavior
 
 - Mining is enabled server-wide by default.
