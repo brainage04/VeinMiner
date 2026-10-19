@@ -8,6 +8,7 @@ import io.github.brainage04.vein_miner.config.AdjacencyMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.gametest.VeinMinerCommandGameTests;
+import io.github.brainage04.vein_miner.gametest.VeinMinerBehaviourGameTests;
 import io.github.brainage04.vein_miner.leaf.LeafDecayRateHandler;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import java.io.IOException;
@@ -31,6 +32,21 @@ import net.minecraft.world.level.storage.LevelResource;
 
 public class VeinMinerPolicyGameTest {
     private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
+
+    @GameTest
+    public void activationAndTogglesControlConnectedMining(GameTestHelper context) {
+        VeinMinerBehaviourGameTests.activationAndTogglesControlConnectedMining(context);
+    }
+
+    @GameTest
+    public void personalCommandsPersistAndCannotOverrideServerDenials(GameTestHelper context) {
+        VeinMinerBehaviourGameTests.personalCommandsPersistAndCannotOverrideServerDenials(context);
+    }
+
+    @GameTest
+    public void adminCommandsPersistSettingsAndRejectInvalidLimits(GameTestHelper context) {
+        VeinMinerBehaviourGameTests.adminCommandsPersistSettingsAndRejectInvalidLimits(context);
+    }
 
     @GameTest
     public void faceAdjacencyLeavesDiagonalOreIntact(GameTestHelper context) {
