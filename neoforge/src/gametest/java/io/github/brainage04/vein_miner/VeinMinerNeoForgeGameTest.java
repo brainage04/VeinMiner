@@ -2,6 +2,7 @@ package io.github.brainage04.vein_miner;
 
 import io.github.brainage04.vein_miner.gametest.VeinMinerCommandGameTests;
 import io.github.brainage04.vein_miner.gametest.VeinMinerBehaviourGameTests;
+import io.github.brainage04.vein_miner.leaf.VeinMinerLeafGameTests;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -16,6 +17,12 @@ public final class VeinMinerNeoForgeGameTest {
     public static void registerTestFunctions(RegisterEvent event) {
         VeinMinerNeoForgeMiningGameTests miningTests = new VeinMinerNeoForgeMiningGameTests();
         VeinMinerNeoForgePolicyGameTests policyTests = new VeinMinerNeoForgePolicyGameTests();
+        register(event, "queued_decay_honours_disable_and_shutdown",
+                VeinMinerLeafGameTests::queuedDecayHonoursDisableAndShutdown);
+        register(event, "queued_decay_honours_random_tick_rule_and_leaf_state",
+                VeinMinerLeafGameTests::queuedDecayHonoursRandomTickRuleAndLeafState);
+        register(event, "global_clear_confirmation_does_not_survive_shutdown",
+                VeinMinerBehaviourGameTests::globalClearConfirmationDoesNotSurviveShutdown);
         register(event, "activation_and_toggles_control_connected_mining",
                 VeinMinerBehaviourGameTests::activationAndTogglesControlConnectedMining);
         register(event, "personal_commands_persist_and_cannot_override_server_denials",

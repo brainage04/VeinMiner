@@ -58,11 +58,18 @@ public final class LeafDecayRateHandler {
     }
 
     public static void tick(MinecraftServer server) {
+        tick(server, server.getTickCount());
+    }
+
+    static void tick(MinecraftServer server, int currentTick) {
+        if (getLeafDecaySpeedMultiplier() <= 1) {
+            shutdown(server);
+            return;
+        }
         if (pendingLeafDecays.isEmpty()) {
             return;
         }
 
-        int currentTick = server.getTickCount();
         Iterator<PendingLeafDecay> iterator = pendingLeafDecays.iterator();
         while (iterator.hasNext()) {
             PendingLeafDecay pendingDecay = iterator.next();
@@ -74,7 +81,9 @@ public final class LeafDecayRateHandler {
                     new LeafDecayKey(pendingDecay.dimension, pendingDecay.leafPos.asLong()));
 
             ServerLevel level = server.getLevel(pendingDecay.dimension);
-            if (level == null || !level.isLoaded(pendingDecay.leafPos)) {
+            if (level == null
+                    || !level.isLoaded(pendingDecay.leafPos)
+                    || level.getGameRules().get(GameRules.RANDOM_TICK_SPEED) <= 0) {
                 continue;
             }
 

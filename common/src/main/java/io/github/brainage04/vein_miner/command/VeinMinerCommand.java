@@ -191,6 +191,10 @@ public final class VeinMinerCommand {
                                                                 .executes(context -> listSelection(context.getSource(), "Denied block tags", sorted(VeinMinerConfigManager.getConfig().deniedTags), IntegerArgumentType.getInteger(context, "page"))))))))));
     }
 
+    public static void shutdown(MinecraftServer server) {
+        PENDING_GLOBAL_WHITELIST_CLEARS.clear();
+    }
+
     public static void tick(MinecraftServer server) {
         if (PENDING_GLOBAL_WHITELIST_CLEARS.isEmpty()) {
             return;

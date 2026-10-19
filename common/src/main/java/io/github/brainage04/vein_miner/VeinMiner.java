@@ -26,6 +26,7 @@ public final class VeinMiner {
         platform.registerServerTick(LeafDecayRateHandler::tick);
         platform.registerServerStarted(VeinMinerPlayerSettings::load);
         platform.registerServerStopping(VeinMinerPlayerSettings::shutdown);
+        platform.registerServerStopping(VeinMinerCommand::shutdown);
         platform.registerServerStopping(LeafDecayRateHandler::shutdown);
         ServerModHelpRegistry.register(
                 new ServerModHelpEntry(

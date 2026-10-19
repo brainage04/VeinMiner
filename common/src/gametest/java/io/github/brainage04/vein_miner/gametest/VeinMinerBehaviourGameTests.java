@@ -1,6 +1,7 @@
 package io.github.brainage04.vein_miner.gametest;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.brainage04.vein_miner.command.VeinMinerCommand;
 import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
@@ -131,6 +132,30 @@ public final class VeinMinerBehaviourGameTests {
             current.maxOreBlocks = ore;
             current.maxTreeBlocks = tree;
             current.maxOtherBlocks = other;
+            VeinMinerConfigManager.saveToDisk();
+            resetPlayer(player);
+        }
+        helper.succeed();
+    }
+
+    public static void globalClearConfirmationDoesNotSurviveShutdown(GameTestHelper helper) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        var whitelist = new LinkedHashSet<>(config.whitelist);
+        ServerPlayer player = player(helper);
+        CommandSourceStack source = helper.getLevel().getServer().createCommandSourceStack()
+                .withEntity(player).withSuppressedOutput();
+        try {
+            config.addBlockToWhitelist(Blocks.DIAMOND_ORE);
+            run(source, "veinminer admin selection blocks allow clear");
+            helper.assertTrue(!config.whitelist.isEmpty(), "First clear must request confirmation");
+            VeinMinerCommand.shutdown(source.getServer());
+            run(source, "veinminer admin selection blocks allow clear");
+            helper.assertTrue(!config.whitelist.isEmpty(), "A previous server's confirmation must not clear this server's whitelist");
+            run(source, "veinminer admin selection blocks allow clear");
+            helper.assertTrue(config.whitelist.isEmpty(), "Second clear in the same session must clear the whitelist");
+        } finally {
+            VeinMinerCommand.shutdown(source.getServer());
+            config.whitelist = whitelist;
             VeinMinerConfigManager.saveToDisk();
             resetPlayer(player);
         }
