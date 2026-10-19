@@ -1,18 +1,11 @@
 # Vein Miner
 
-Vein Miner is a server-side Fabric and NeoForge mod that mines connected ore and tree blocks when a player breaks one eligible block. Vanilla clients can join without installing the mod.
+Vein Miner is a server-side Fabric and NeoForge mod for Minecraft 26.2 that mines connected ore and tree blocks when a player breaks one eligible block. Vanilla clients can join without installing the mod.
 
-## Requirements
+Mining is enabled server-wide by default. Each player also has a persistent personal toggle and activation mode. The default mode is `while_sneaking`.
 
-- Minecraft 26.2
-- Fabric Loader 0.19.3 or newer with Fabric API, or NeoForge 26.2.0.88 or newer
-- BrainageLib 1.0.1 or newer
-- Java 25 or newer
+## Features
 
-## Behavior
-
-- Mining is enabled server-wide by default.
-- Each player also has a persistent personal toggle and activation mode. The default mode is `while_sneaking`.
 - The built-in selection policy allows `#vein_miner:ores` and `#vein_miner:trees`. Those tags include `#c:ores` and `#minecraft:logs`, respectively.
 - Operators can add exact blocks or block tags and can deny exact blocks or tags. Denials take precedence over allowances.
 - A player's optional personal whitelist can only narrow the server policy; it cannot enable a server-denied block.
@@ -24,7 +17,17 @@ Vein Miner is a server-side Fabric and NeoForge mod that mines connected ore and
 
 Vanilla loot tables, block entities, mining statistics, and tool checks are preserved for every mined block.
 
-## Player commands
+## Getting started
+
+- Minecraft 26.2
+- Fabric Loader 0.19.3 or newer with Fabric API, or NeoForge 26.2.0.88 or newer
+- BrainageLib 1.0.1 or newer
+- Java 25 or newer
+- Install Vein Miner and BrainageLib on the server.
+
+## Commands
+
+### Player commands
 
 `/veinminer` shows the effective global and personal state plus relevant help.
 
@@ -45,7 +48,7 @@ Vanilla loot tables, block entities, mining statistics, and tool checks are pres
 
 Adding the first personal block enables the personal whitelist filter. Clearing it leaves an empty filter enabled, which intentionally prevents all vein mining until the player disables the filter or adds another allowed block.
 
-## Operator commands
+### Operator commands
 
 Operator-only controls are under `/veinminer admin`.
 
@@ -75,26 +78,25 @@ Operator-only controls are under `/veinminer admin`.
 
 Tag arguments use identifiers without `#`, for example `c:ores` or `minecraft:logs`; an id without a namespace, such as `logs`, means `minecraft:logs`. `add` tab-completes the server's block tags and `remove` completes the tags currently in that selection.
 
-## Configuration files
+### BrainageLib commands
+
+Vein Miner registers with BrainageLib's combined first-join notice.
+
+- `/servermods help` - prints the help lists for all mods which depend on BrainageLib.
+- `/servermods config` - (operators only) prints the settings command for each mod which depends on BrainageLib.
+
+## Configuration
 
 Server policy is stored in `config/vein_miner.json`. Changes made through operator commands are saved immediately. Invalid numeric values and malformed identifiers are corrected to bounded defaults during reload, with warnings in the server log.
 
-The legacy `veinSize` setting migrates to all three category limits the first time an older config is loaded.
-
 Persistent player preferences are stored per world in `<world>/vein-miner-players.json`. Removing a block from the global policy does not erase it from player lists; it remains inactive unless an operator allows it again.
 
-## Telekinesis compatibility
+## Compatibility
 
 When [Telekinesis](https://github.com/brainage04/Telekinesis) is installed, drops and experience from both the original block and every connected block go directly to the breaking player. Inventory overflow is dropped at that player's feet. Vein Miner continues to use normal world drops and experience orbs when Telekinesis is absent.
 
-## Shared server help
+## Documentation
 
-Vein Miner registers with BrainageLib's combined first-join notice. Players can run `/servermods help`; operators can also run `/servermods config`.
-
-## Development
-
-```shell
-./gradlew test runGameTest
-```
-
-Release automation is documented in [docs/RELEASE.md](docs/RELEASE.md). Optional Modrinth publishing is documented in [docs/MODRINTH.md](docs/MODRINTH.md).
+- [Development](docs/DEVELOPMENT.md) - builds and tests.
+- [Release automation](docs/RELEASE.md) - release workflow.
+- [Modrinth publishing](docs/MODRINTH.md) - optional publishing setup.
