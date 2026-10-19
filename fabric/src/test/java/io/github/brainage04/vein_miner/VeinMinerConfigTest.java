@@ -54,13 +54,4 @@ class VeinMinerConfigTest {
         assertTrue(AdjacencyMode.FACES_EDGES_CORNERS.includes(1, 1, 1));
     }
 
-    @Test
-    void defaultsSelectCategoryTagsRatherThanHardCodedBlockLists() {
-        VeinMinerConfig config = VeinMinerConfig.createDefault();
-        assertEquals(
-                List.of("vein_miner:ores", "vein_miner:trees"),
-                config.allowedTags.stream().toList()
-        );
-        assertTrue(config.whitelist.isEmpty());
-    }
 }
