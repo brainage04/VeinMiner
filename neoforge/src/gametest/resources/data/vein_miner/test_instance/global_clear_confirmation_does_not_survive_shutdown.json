@@ -1,6 +1,6 @@
 {
   "environment": "minecraft:default",
-  "structure": "fabricmoddingconventions:empty",
+  "structure": "minecraftmodconventions:empty",
   "max_ticks": 20,
   "type": "minecraft:function",
   "function": "vein_miner:global_clear_confirmation_does_not_survive_shutdown"

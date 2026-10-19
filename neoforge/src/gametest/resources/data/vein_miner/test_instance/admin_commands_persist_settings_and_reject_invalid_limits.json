@@ -1,6 +1,6 @@
 {
   "environment": "minecraft:default",
-  "structure": "fabricmoddingconventions:empty",
+  "structure": "minecraftmodconventions:empty",
   "max_ticks": 20,
   "type": "minecraft:function",
   "function": "vein_miner:admin_commands_persist_settings_and_reject_invalid_limits"

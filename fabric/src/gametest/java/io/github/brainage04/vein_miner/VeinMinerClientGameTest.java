@@ -1,7 +1,7 @@
 package io.github.brainage04.vein_miner;
 
-import io.github.brainage04.fabricmoddingconventions.ClientGameTestRecorder;
-import io.github.brainage04.fabricmoddingconventions.ClientGameTestServers;
+import io.github.brainage04.minecraftmodconventions.ClientGameTestRecorder;
+import io.github.brainage04.minecraftmodconventions.ClientGameTestServers;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import java.util.LinkedHashSet;
