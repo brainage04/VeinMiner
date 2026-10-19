@@ -10,7 +10,11 @@ import java.util.LinkedHashSet;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -76,6 +80,10 @@ public final class VeinMinerBehaviourGameTests {
         var deniedBlocks = new LinkedHashSet<>(config.deniedBlocks);
         var deniedTags = new LinkedHashSet<>(config.deniedTags);
         ServerPlayer player = player(helper);
+        // Vanilla's unattached GameTest player needs a listener for command click sounds.
+        player.connection = new ServerGamePacketListenerImpl(helper.getLevel().getServer(),
+                new Connection(PacketFlow.SERVERBOUND), player,
+                CommonListenerCookie.createInitial(player.getGameProfile(), false));
         CommandSourceStack source = player.createCommandSourceStack().withSuppressedOutput();
         try {
             config.deniedBlocks.clear();
