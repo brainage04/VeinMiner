@@ -299,6 +299,7 @@ public final class VeinMinerCommand {
         String blockId = BuiltInRegistries.BLOCK.getKey(block).toString();
         return switch (VeinMinerPlayerSettings.addPersonalBlock(player, block)) {
             case ADDED -> FEEDBACK.success(source, "Added %s to your personal whitelist and enabled the filter.", false, blockId);
+            case ADDED_NOT_SAVED -> FEEDBACK.failure(source, "Added %s to your personal whitelist for this session but could not be saved.", blockId);
             case ALREADY_PRESENT -> FEEDBACK.failure(source, "%s is already in your personal whitelist.", blockId);
             case NOT_GLOBALLY_ALLOWED -> FEEDBACK.failure(source, "%s is not allowed by the server selection policy.", blockId);
             case LIMIT_REACHED -> FEEDBACK.failure(source, "Personal whitelist limit reached (%d blocks).", VeinMinerPlayerSettings.MAX_PERSONAL_WHITELIST_SIZE);
@@ -308,10 +309,11 @@ public final class VeinMinerCommand {
     private static int removePersonalBlock(CommandSourceStack source, Block block) throws CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         String blockId = BuiltInRegistries.BLOCK.getKey(block).toString();
-        if (!VeinMinerPlayerSettings.removePersonalBlock(player, block)) {
-            return FEEDBACK.failure(source, "%s is not in your personal whitelist.", blockId);
-        }
-        return FEEDBACK.success(source, "Removed %s from your personal whitelist.", false, blockId);
+        return switch (VeinMinerPlayerSettings.removePersonalBlock(player, block)) {
+            case REMOVED -> FEEDBACK.success(source, "Removed %s from your personal whitelist.", false, blockId);
+            case REMOVED_NOT_SAVED -> FEEDBACK.failure(source, "Removed %s from your personal whitelist for this session but could not be saved.", blockId);
+            case NOT_PRESENT -> FEEDBACK.failure(source, "%s is not in your personal whitelist.", blockId);
+        };
     }
 
     private static int clearPersonalWhitelist(CommandSourceStack source) throws CommandSyntaxException {

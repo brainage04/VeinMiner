@@ -6,7 +6,13 @@ import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -20,12 +26,45 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.storage.LevelResource;
 
 /** Shared scenarios run through each loader's real command and mining hooks. */
 public final class VeinMinerBehaviourGameTests {
     private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
 
     private VeinMinerBehaviourGameTests() {}
+
+    /** A settings file that failed to load (malformed or a newer schema) must survive later changes and shutdown byte for byte. */
+    public static void unreadablePlayerSettingsAreNotOverwritten(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        Path file = server.getWorldPath(LevelResource.ROOT).resolve("vein-miner-players.json");
+        ServerPlayer player = player(helper);
+        try {
+            byte[] original = Files.readAllBytes(file);
+            try {
+                for (String document : List.of("{\"schemaVersion\": 1, \"players\": {", "{\"schemaVersion\": 2, \"players\": {}}")) {
+                    byte[] bytes = document.getBytes(StandardCharsets.UTF_8);
+                    Files.write(file, bytes);
+                    VeinMinerPlayerSettings.load(server);
+                    helper.assertTrue(!VeinMinerPlayerSettings.setEnabled(player, false), "Unreadable settings must not be replaced by a preference change");
+                    helper.assertTrue(!VeinMinerPlayerSettings.isEnabled(player), "The unsaved preference must still apply this session");
+                    helper.assertTrue(VeinMinerPlayerSettings.removePersonalBlock(player, Blocks.STONE)
+                            == VeinMinerPlayerSettings.WhitelistRemoveResult.NOT_PRESENT, "Removing an absent block must not count as a change");
+                    helper.assertTrue(!VeinMinerPlayerSettings.clearPersonalWhitelist(player), "Clearing must report that it was not saved");
+                    VeinMinerPlayerSettings.shutdown(server);
+                    helper.assertTrue(Arrays.equals(Files.readAllBytes(file), bytes), "Shutdown must preserve unreadable or newer-schema settings: " + document);
+                }
+            } finally {
+                Files.write(file, original);
+                VeinMinerPlayerSettings.load(server);
+            }
+        } catch (IOException exception) {
+            throw new AssertionError("Could not exercise the world's player settings file", exception);
+        } finally {
+            resetPlayer(player);
+        }
+        helper.succeed();
+    }
 
     public static void activationAndTogglesControlConnectedMining(GameTestHelper helper) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();

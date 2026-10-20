@@ -45,6 +45,11 @@ public class VeinMinerPolicyGameTest {
     }
 
     @GameTest
+    public void unreadablePlayerSettingsAreNotOverwritten(GameTestHelper context) {
+        VeinMinerBehaviourGameTests.unreadablePlayerSettingsAreNotOverwritten(context);
+    }
+
+    @GameTest
     public void globalClearConfirmationDoesNotSurviveShutdown(GameTestHelper context) {
         VeinMinerBehaviourGameTests.globalClearConfirmationDoesNotSurviveShutdown(context);
     }

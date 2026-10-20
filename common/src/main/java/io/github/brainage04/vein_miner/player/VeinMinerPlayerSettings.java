@@ -35,6 +35,8 @@ public final class VeinMinerPlayerSettings {
             new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static final Map<UUID, PlayerPreference> PREFERENCES = new HashMap<>();
     private static Path statePath;
+    /** False after the world's file failed to load: it is then kept unchanged and changes apply for the session only. */
+    private static boolean canSave;
 
     private VeinMinerPlayerSettings() {}
 
@@ -43,6 +45,7 @@ public final class VeinMinerPlayerSettings {
         synchronized (VeinMinerPlayerSettings.class) {
             PREFERENCES.clear();
             statePath = null;
+            canSave = false;
         }
     }
 
@@ -106,19 +109,18 @@ public final class VeinMinerPlayerSettings {
         }
         preference.personalWhitelist.add(blockId.toString());
         preference.personalWhitelistEnabled = true;
-        save();
-        return WhitelistAddResult.ADDED;
+        return save() ? WhitelistAddResult.ADDED : WhitelistAddResult.ADDED_NOT_SAVED;
     }
 
-    public static synchronized boolean removePersonalBlock(ServerPlayer player, Block block) {
+    public static synchronized WhitelistRemoveResult removePersonalBlock(ServerPlayer player, Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
         boolean removed =
                 blockId != BuiltInRegistries.BLOCK.getDefaultKey()
                         && mutablePreference(player).personalWhitelist.remove(blockId.toString());
-        if (removed) {
-            save();
+        if (!removed) {
+            return WhitelistRemoveResult.NOT_PRESENT;
         }
-        return removed;
+        return save() ? WhitelistRemoveResult.REMOVED : WhitelistRemoveResult.REMOVED_NOT_SAVED;
     }
 
     public static synchronized boolean clearPersonalWhitelist(ServerPlayer player) {
@@ -145,12 +147,13 @@ public final class VeinMinerPlayerSettings {
 
     public static synchronized void load(MinecraftServer server) {
         statePath = server.getWorldPath(LevelResource.ROOT).resolve(FILE_NAME);
+        canSave = false;
         PREFERENCES.clear();
         if (!Files.exists(statePath)) {
+            canSave = true;
             save();
             return;
         }
-
         try (Reader reader = Files.newBufferedReader(statePath)) {
             SavedState loaded = GSON.fromJson(reader, SavedState.class);
             if (loaded == null
@@ -173,14 +176,19 @@ public final class VeinMinerPlayerSettings {
                             entry.getKey());
                 }
             }
+            canSave = true;
         } catch (IOException | JsonParseException exception) {
+            PREFERENCES.clear();
             VeinMiner.LOGGER.error(
-                    "Failed to load Vein Miner player settings from {}", statePath, exception);
+                    "Failed to load Vein Miner player settings from {}; the file will not be overwritten and"
+                            + " changes apply for this session only",
+                    statePath,
+                    exception);
         }
     }
 
     private static synchronized boolean save() {
-        if (statePath == null) {
+        if (statePath == null || !canSave) {
             return false;
         }
         Path temporaryPath = statePath.resolveSibling(statePath.getFileName() + ".tmp");
@@ -221,9 +229,16 @@ public final class VeinMinerPlayerSettings {
 
     public enum WhitelistAddResult {
         ADDED,
+        ADDED_NOT_SAVED,
         ALREADY_PRESENT,
         NOT_GLOBALLY_ALLOWED,
         LIMIT_REACHED
+    }
+
+    public enum WhitelistRemoveResult {
+        REMOVED,
+        REMOVED_NOT_SAVED,
+        NOT_PRESENT
     }
 
     private static final class SavedState {

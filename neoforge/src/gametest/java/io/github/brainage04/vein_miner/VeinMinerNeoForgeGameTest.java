@@ -21,6 +21,8 @@ public final class VeinMinerNeoForgeGameTest {
                 VeinMinerLeafGameTests::queuedDecayHonoursDisableAndShutdown);
         register(event, "queued_decay_honours_random_tick_rule_and_leaf_state",
                 VeinMinerLeafGameTests::queuedDecayHonoursRandomTickRuleAndLeafState);
+        register(event, "unreadable_player_settings_are_not_overwritten",
+                VeinMinerBehaviourGameTests::unreadablePlayerSettingsAreNotOverwritten);
         register(event, "global_clear_confirmation_does_not_survive_shutdown",
                 VeinMinerBehaviourGameTests::globalClearConfirmationDoesNotSurviveShutdown);
         register(event, "activation_and_toggles_control_connected_mining",
