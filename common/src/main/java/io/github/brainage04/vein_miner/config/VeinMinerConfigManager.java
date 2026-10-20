@@ -2,33 +2,34 @@ package io.github.brainage04.vein_miner.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
+import io.github.brainage04.brainagelib.storage.JsonFile;
 import io.github.brainage04.vein_miner.VeinMiner;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
+/**
+ * The server-wide {@code vein_miner.json}. A file that fails to load keeps the current config and is not
+ * overwritten until a later reload succeeds; admin changes made meanwhile apply in memory only.
+ */
 public final class VeinMinerConfigManager {
     private static final Gson GSON =
             new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-    private static Path configPath;
+    private static JsonFile<VeinMinerConfig> file;
     private static VeinMinerConfig config = VeinMinerConfig.createDefault();
+    /** Set by the decoder when the loaded document was migrated or corrected and should be written back. */
+    private static boolean rewriteLoadedDocument;
 
     private VeinMinerConfigManager() {}
 
     public static synchronized void initialize(Path configDirectory) {
-        configPath = configDirectory.resolve("vein_miner.json");
-        if (!Files.exists(configPath)) {
-            saveToDisk();
-            return;
-        }
+        file = JsonFile.builder(configDirectory.resolve("vein_miner.json"), GSON, VeinMinerConfig.class)
+                .decoder(VeinMinerConfigManager::decode)
+                .description("Vein Miner config")
+                .logger(VeinMiner.LOGGER)
+                .build();
         reloadFromDisk();
     }
 
@@ -37,55 +38,43 @@ public final class VeinMinerConfigManager {
     }
 
     public static synchronized boolean saveToDisk() {
-        Path temporaryPath = configPath.resolveSibling(configPath.getFileName() + ".tmp");
-        try {
-            Files.createDirectories(configPath.getParent());
-            try (Writer writer = Files.newBufferedWriter(temporaryPath)) {
-                GSON.toJson(config, writer);
-            }
-            moveAtomically(temporaryPath, configPath);
-            return true;
-        } catch (IOException exception) {
-            VeinMiner.LOGGER.error("Failed to save Vein Miner config to {}", configPath, exception);
-            try {
-                Files.deleteIfExists(temporaryPath);
-            } catch (IOException cleanupException) {
-                exception.addSuppressed(cleanupException);
-            }
-            return false;
-        }
+        return file.save(config).saved();
     }
 
+    /**
+     * Loads the file. A missing file is recreated with defaults; one that cannot be loaded keeps the current
+     * config and returns false.
+     */
     public static synchronized boolean reloadFromDisk() {
-        if (!Files.exists(configPath)) {
-            config = VeinMinerConfig.createDefault();
-            return saveToDisk();
-        }
+        rewriteLoadedDocument = false;
+        return switch (file.load()) {
+            case JsonFile.LoadResult.Missing<VeinMinerConfig> missing -> {
+                config = VeinMinerConfig.createDefault();
+                yield saveToDisk();
+            }
+            case JsonFile.LoadResult.Loaded<VeinMinerConfig>(VeinMinerConfig loaded) -> {
+                config = loaded;
+                if (rewriteLoadedDocument) {
+                    saveToDisk();
+                }
+                yield true;
+            }
+            default -> false;
+        };
+    }
 
-        try (Reader reader = Files.newBufferedReader(configPath)) {
-            JsonObject document = JsonParser.parseReader(reader).getAsJsonObject();
-            VeinMinerConfig loadedConfig = GSON.fromJson(document, VeinMinerConfig.class);
-            if (loadedConfig == null) {
-                throw new JsonParseException("Configuration document is empty");
-            }
-
-            boolean migrated = migrateLegacyVeinSize(document, loadedConfig);
-            List<String> corrections = loadedConfig.normalize();
-            for (String correction : corrections) {
-                VeinMiner.LOGGER.warn("Vein Miner config correction: {}", correction);
-            }
-            config = loadedConfig;
-            if (migrated || !corrections.isEmpty()) {
-                saveToDisk();
-            }
-            return true;
-        } catch (IOException | IllegalStateException | JsonParseException exception) {
-            VeinMiner.LOGGER.error(
-                    "Failed to load Vein Miner config from {}; preserving current config",
-                    configPath,
-                    exception);
-            return false;
+    private static VeinMinerConfig decode(JsonElement element) {
+        if (!(element instanceof JsonObject document)) {
+            throw new JsonParseException("Expected a JSON object");
         }
+        VeinMinerConfig loadedConfig = GSON.fromJson(document, VeinMinerConfig.class);
+        boolean migrated = migrateLegacyVeinSize(document, loadedConfig);
+        List<String> corrections = loadedConfig.normalize();
+        for (String correction : corrections) {
+            VeinMiner.LOGGER.warn("Vein Miner config correction: {}", correction);
+        }
+        rewriteLoadedDocument = migrated || !corrections.isEmpty();
+        return loadedConfig;
     }
 
     static boolean migrateLegacyVeinSize(JsonObject document, VeinMinerConfig loadedConfig) {
@@ -110,17 +99,5 @@ public final class VeinMinerConfigManager {
         VeinMiner.LOGGER.info(
                 "Migrated legacy veinSize={} to all three category limits", legacyLimit);
         return true;
-    }
-
-    private static void moveAtomically(Path source, Path destination) throws IOException {
-        try {
-            Files.move(
-                    source,
-                    destination,
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
-        }
     }
 }

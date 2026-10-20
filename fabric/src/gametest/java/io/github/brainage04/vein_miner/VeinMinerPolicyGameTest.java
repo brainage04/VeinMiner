@@ -50,6 +50,11 @@ public class VeinMinerPolicyGameTest {
     }
 
     @GameTest
+    public void playerSettingsFromPreviousVersionLoad(GameTestHelper context) {
+        VeinMinerBehaviourGameTests.playerSettingsFromPreviousVersionLoad(context);
+    }
+
+    @GameTest
     public void globalClearConfirmationDoesNotSurviveShutdown(GameTestHelper context) {
         VeinMinerBehaviourGameTests.globalClearConfirmationDoesNotSurviveShutdown(context);
     }

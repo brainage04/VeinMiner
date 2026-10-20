@@ -1,6 +1,7 @@
 package io.github.brainage04.vein_miner.gametest;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.brainage04.brainagelib.gametest.GameTestPlayer;
 import io.github.brainage04.vein_miner.command.VeinMinerCommand;
 import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
@@ -16,11 +17,7 @@ import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.network.Connection;
-import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.CommonListenerCookie;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -31,6 +28,35 @@ import net.minecraft.world.level.storage.LevelResource;
 /** Shared scenarios run through each loader's real command and mining hooks. */
 public final class VeinMinerBehaviourGameTests {
     private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
+
+    /** A settings file written by the previous version loads and is written back byte for byte. */
+    public static void playerSettingsFromPreviousVersionLoad(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        Path file = server.getWorldPath(LevelResource.ROOT).resolve("vein-miner-players.json");
+        ServerPlayer player = player(helper);
+        try {
+            byte[] original = Files.readAllBytes(file);
+            try {
+                String previous = "{\n  \"schemaVersion\": 1,\n  \"players\": {\n    \"" + player.getUUID()
+                        + "\": {\n      \"enabled\": false,\n      \"activationMode\": \"while_not_sneaking\",\n"
+                        + "      \"personalWhitelistEnabled\": true,\n      \"personalWhitelist\": [\n"
+                        + "        \"minecraft:diamond_ore\"\n      ]\n    }\n  }\n}";
+                Files.writeString(file, previous);
+                VeinMinerPlayerSettings.load(server);
+                helper.assertTrue(!VeinMinerPlayerSettings.isEnabled(player), "The toggle must load");
+                helper.assertTrue(VeinMinerPlayerSettings.activationMode(player) == ActivationMode.WHILE_NOT_SNEAKING, "The activation mode must load");
+                helper.assertTrue(VeinMinerPlayerSettings.personalWhitelist(player).equals(List.of("minecraft:diamond_ore")), "The personal whitelist must load");
+                VeinMinerPlayerSettings.shutdown(server);
+                helper.assertTrue(Files.readString(file).equals(previous), "Saving unchanged settings must keep the file's format");
+            } finally {
+                Files.write(file, original);
+                VeinMinerPlayerSettings.load(server);
+            }
+        } catch (IOException exception) {
+            throw new AssertionError("Could not exercise the world's player settings file", exception);
+        }
+        helper.succeed();
+    }
 
     private VeinMinerBehaviourGameTests() {}
 
@@ -118,12 +144,9 @@ public final class VeinMinerBehaviourGameTests {
         var whitelist = new LinkedHashSet<>(config.whitelist);
         var deniedBlocks = new LinkedHashSet<>(config.deniedBlocks);
         var deniedTags = new LinkedHashSet<>(config.deniedTags);
-        ServerPlayer player = player(helper);
-        // Vanilla's unattached GameTest player needs a listener for command click sounds.
-        player.connection = new ServerGamePacketListenerImpl(helper.getLevel().getServer(),
-                new Connection(PacketFlow.SERVERBOUND), player,
-                CommonListenerCookie.createInitial(player.getGameProfile(), false));
-        CommandSourceStack source = player.createCommandSourceStack().withSuppressedOutput();
+        GameTestPlayer fixture = GameTestPlayer.join(helper, "VmCommands").gameMode(GameType.SURVIVAL);
+        ServerPlayer player = fixture.player();
+        CommandSourceStack source = player.createCommandSourceStack();
         try {
             config.deniedBlocks.clear();
             config.deniedTags.clear();
@@ -132,6 +155,8 @@ public final class VeinMinerBehaviourGameTests {
             helper.assertTrue(VeinMinerPlayerSettings.isPersonalWhitelistEnabled(player), "Adding a block must enable the personal filter");
             run(source, "veinminer mode while_not_sneaking");
             run(source, "veinminer disable");
+            helper.assertTrue(fixture.received("[Vein Miner] Your Vein Miner toggle is now disabled."),
+                    "The player must be told about the change, got " + fixture.messageTexts());
             VeinMinerPlayerSettings.load(helper.getLevel().getServer());
             helper.assertTrue(!VeinMinerPlayerSettings.isEnabled(player), "Disabled preference must survive reload");
             helper.assertTrue(VeinMinerPlayerSettings.activationMode(player) == ActivationMode.WHILE_NOT_SNEAKING, "Activation mode must survive reload");
@@ -147,6 +172,7 @@ public final class VeinMinerBehaviourGameTests {
             config.deniedBlocks = deniedBlocks;
             config.deniedTags = deniedTags;
             resetPlayer(player);
+            fixture.close();
         }
         helper.succeed();
     }

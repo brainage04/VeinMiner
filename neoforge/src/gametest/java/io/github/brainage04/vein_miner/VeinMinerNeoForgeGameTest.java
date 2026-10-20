@@ -23,6 +23,8 @@ public final class VeinMinerNeoForgeGameTest {
                 VeinMinerLeafGameTests::queuedDecayHonoursRandomTickRuleAndLeafState);
         register(event, "unreadable_player_settings_are_not_overwritten",
                 VeinMinerBehaviourGameTests::unreadablePlayerSettingsAreNotOverwritten);
+        register(event, "player_settings_from_previous_version_load",
+                VeinMinerBehaviourGameTests::playerSettingsFromPreviousVersionLoad);
         register(event, "global_clear_confirmation_does_not_survive_shutdown",
                 VeinMinerBehaviourGameTests::globalClearConfirmationDoesNotSurviveShutdown);
         register(event, "activation_and_toggles_control_connected_mining",

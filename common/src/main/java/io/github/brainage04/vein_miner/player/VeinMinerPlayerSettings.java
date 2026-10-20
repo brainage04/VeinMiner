@@ -1,52 +1,40 @@
 package io.github.brainage04.vein_miner.player;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
+import io.github.brainage04.brainagelib.storage.WorldPlayerStore;
 import io.github.brainage04.vein_miner.VeinMiner;
 import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.LevelResource;
 
+/**
+ * Each player's Vein Miner preferences, stored per world in {@code vein-miner-players.json}. A file that fails to
+ * load (malformed or a newer schema) is kept unchanged; changes then apply for the session only.
+ */
 public final class VeinMinerPlayerSettings {
     public static final int MAX_PERSONAL_WHITELIST_SIZE = 64;
-    private static final int SCHEMA_VERSION = 1;
-    private static final String FILE_NAME = "vein-miner-players.json";
-    private static final Gson GSON =
-            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-    private static final Map<UUID, PlayerPreference> PREFERENCES = new HashMap<>();
-    private static Path statePath;
-    /** False after the world's file failed to load: it is then kept unchanged and changes apply for the session only. */
-    private static boolean canSave;
+    private static final WorldPlayerStore<PlayerPreference> STORE = WorldPlayerStore
+            .builder("vein-miner-players.json", PlayerPreference.class, PlayerPreference::new)
+            .normalizer(PlayerPreference::normalize)
+            .description("Vein Miner player settings")
+            .logger(VeinMiner.LOGGER)
+            .build();
 
     private VeinMinerPlayerSettings() {}
 
-    public static void shutdown(MinecraftServer server) {
-        save();
-        synchronized (VeinMinerPlayerSettings.class) {
-            PREFERENCES.clear();
-            statePath = null;
-            canSave = false;
-        }
+    public static synchronized void load(MinecraftServer server) {
+        STORE.load(server);
+    }
+
+    public static synchronized void shutdown(MinecraftServer server) {
+        STORE.close();
     }
 
     public static synchronized boolean isEnabled(ServerPlayer player) {
@@ -137,94 +125,15 @@ public final class VeinMinerPlayerSettings {
     }
 
     private static PlayerPreference preference(ServerPlayer player) {
-        PlayerPreference preference = PREFERENCES.get(player.getUUID());
-        return preference == null ? PlayerPreference.defaults() : preference;
+        return STORE.get(player.getUUID());
     }
 
     private static PlayerPreference mutablePreference(ServerPlayer player) {
-        return PREFERENCES.computeIfAbsent(player.getUUID(), uuid -> PlayerPreference.defaults());
+        return STORE.getOrCreate(player.getUUID());
     }
 
-    public static synchronized void load(MinecraftServer server) {
-        statePath = server.getWorldPath(LevelResource.ROOT).resolve(FILE_NAME);
-        canSave = false;
-        PREFERENCES.clear();
-        if (!Files.exists(statePath)) {
-            canSave = true;
-            save();
-            return;
-        }
-        try (Reader reader = Files.newBufferedReader(statePath)) {
-            SavedState loaded = GSON.fromJson(reader, SavedState.class);
-            if (loaded == null
-                    || loaded.schemaVersion != SCHEMA_VERSION
-                    || loaded.players == null) {
-                throw new JsonParseException("Unsupported or incomplete player settings document");
-            }
-            for (Map.Entry<String, PlayerPreference> entry : loaded.players.entrySet()) {
-                try {
-                    PlayerPreference preference = entry.getValue();
-                    if (preference == null) {
-                        continue;
-                    }
-                    preference.normalize();
-                    PREFERENCES.put(UUID.fromString(entry.getKey()), preference);
-                } catch (IllegalArgumentException exception) {
-                    VeinMiner.LOGGER.warn(
-                            "Ignoring invalid player settings entry in {}: {}",
-                            statePath,
-                            entry.getKey());
-                }
-            }
-            canSave = true;
-        } catch (IOException | JsonParseException exception) {
-            PREFERENCES.clear();
-            VeinMiner.LOGGER.error(
-                    "Failed to load Vein Miner player settings from {}; the file will not be overwritten and"
-                            + " changes apply for this session only",
-                    statePath,
-                    exception);
-        }
-    }
-
-    private static synchronized boolean save() {
-        if (statePath == null || !canSave) {
-            return false;
-        }
-        Path temporaryPath = statePath.resolveSibling(statePath.getFileName() + ".tmp");
-        Map<String, PlayerPreference> serialized = new HashMap<>();
-        PREFERENCES.forEach((uuid, preference) -> serialized.put(uuid.toString(), preference));
-        SavedState state = new SavedState(SCHEMA_VERSION, serialized);
-
-        try {
-            Files.createDirectories(statePath.getParent());
-            try (Writer writer = Files.newBufferedWriter(temporaryPath)) {
-                GSON.toJson(state, writer);
-            }
-            moveAtomically(temporaryPath, statePath);
-            return true;
-        } catch (IOException exception) {
-            VeinMiner.LOGGER.error(
-                    "Failed to save Vein Miner player settings to {}", statePath, exception);
-            try {
-                Files.deleteIfExists(temporaryPath);
-            } catch (IOException cleanupException) {
-                exception.addSuppressed(cleanupException);
-            }
-            return false;
-        }
-    }
-
-    private static void moveAtomically(Path source, Path destination) throws IOException {
-        try {
-            Files.move(
-                    source,
-                    destination,
-                    StandardCopyOption.REPLACE_EXISTING,
-                    StandardCopyOption.ATOMIC_MOVE);
-        } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(source, destination, StandardCopyOption.REPLACE_EXISTING);
-        }
+    private static boolean save() {
+        return STORE.save().saved();
     }
 
     public enum WhitelistAddResult {
@@ -241,25 +150,11 @@ public final class VeinMinerPlayerSettings {
         NOT_PRESENT
     }
 
-    private static final class SavedState {
-        private int schemaVersion;
-        private Map<String, PlayerPreference> players;
-
-        private SavedState(int schemaVersion, Map<String, PlayerPreference> players) {
-            this.schemaVersion = schemaVersion;
-            this.players = players;
-        }
-    }
-
     private static final class PlayerPreference {
         private boolean enabled = true;
         private ActivationMode activationMode;
         private boolean personalWhitelistEnabled;
         private LinkedHashSet<String> personalWhitelist = new LinkedHashSet<>();
-
-        private static PlayerPreference defaults() {
-            return new PlayerPreference();
-        }
 
         private void normalize() {
             if (personalWhitelist == null) {

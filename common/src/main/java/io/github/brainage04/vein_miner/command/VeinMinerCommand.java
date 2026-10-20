@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import io.github.brainage04.brainagelib.confirmation.ConfirmationWindow;
 import io.github.brainage04.brainagelib.feedback.ModFeedback;
 import io.github.brainage04.vein_miner.VeinMiner;
 import io.github.brainage04.vein_miner.config.ActivationMode;
@@ -29,10 +30,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -42,10 +41,11 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
 public final class VeinMinerCommand {
-    private static final int CLEAR_CONFIRMATION_WINDOW_TICKS = 10 * 20;
     private static final int LIST_PAGE_SIZE = 10;
     private static final ModFeedback FEEDBACK = ModFeedback.create(VeinMiner.MOD_NAME);
-    private static final Map<UUID, Integer> PENDING_GLOBAL_WHITELIST_CLEARS = new HashMap<>();
+    /** A second global whitelist clear within 10 seconds (200 ticks, exclusive) confirms the first. */
+    private static final ConfirmationWindow<UUID> GLOBAL_WHITELIST_CLEAR =
+            new ConfirmationWindow<>(10 * 20, ConfirmationWindow.Boundary.EXCLUSIVE);
 
     private VeinMinerCommand() {
     }
@@ -192,26 +192,16 @@ public final class VeinMinerCommand {
     }
 
     public static void shutdown(MinecraftServer server) {
-        PENDING_GLOBAL_WHITELIST_CLEARS.clear();
+        GLOBAL_WHITELIST_CLEAR.clear();
     }
 
     public static void tick(MinecraftServer server) {
-        if (PENDING_GLOBAL_WHITELIST_CLEARS.isEmpty()) {
-            return;
-        }
-        int currentTick = server.getTickCount();
-        var iterator = PENDING_GLOBAL_WHITELIST_CLEARS.entrySet().iterator();
-        while (iterator.hasNext()) {
-            var entry = iterator.next();
-            if (currentTick < entry.getValue()) {
-                continue;
-            }
-            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+        GLOBAL_WHITELIST_CLEAR.expire(server.getTickCount(), id -> {
+            ServerPlayer player = server.getPlayerList().getPlayer(id);
             if (player != null) {
                 FEEDBACK.neutral(player, "Global whitelist clear cancelled.");
             }
-            iterator.remove();
-        }
+        });
     }
 
     private static int showStatus(CommandSourceStack source) {
@@ -461,14 +451,11 @@ public final class VeinMinerCommand {
             VeinMinerConfigManager.getConfig().whitelist.clear();
             return saveSelectionChange(source, "Explicit allowed-block whitelist cleared.");
         }
-        int currentTick = source.getServer().getTickCount();
-        Integer expiresAt = PENDING_GLOBAL_WHITELIST_CLEARS.get(player.getUUID());
-        if (expiresAt != null && currentTick < expiresAt) {
-            PENDING_GLOBAL_WHITELIST_CLEARS.remove(player.getUUID());
+        if (GLOBAL_WHITELIST_CLEAR.requestOrConfirm(player.getUUID(), source.getServer().getTickCount())
+                == ConfirmationWindow.Outcome.CONFIRMED) {
             VeinMinerConfigManager.getConfig().whitelist.clear();
             return saveSelectionChange(source, "Explicit allowed-block whitelist cleared.");
         }
-        PENDING_GLOBAL_WHITELIST_CLEARS.put(player.getUUID(), currentTick + CLEAR_CONFIRMATION_WINDOW_TICKS);
         return FEEDBACK.neutral(source, "Run this command again within 10 seconds to clear the global explicit-block whitelist.");
     }
 

@@ -21,7 +21,7 @@ Vanilla loot tables, block entities, mining statistics, and tool checks are pres
 
 - Minecraft 26.2
 - Fabric Loader 0.19.3 or newer with Fabric API, or NeoForge 26.2.0.88 or newer
-- BrainageLib 1.0.1 or newer
+- BrainageLib 1.1.0 or newer
 - Java 25 or newer
 - Install Vein Miner and BrainageLib on the server.
 
@@ -90,6 +90,8 @@ Vein Miner registers with BrainageLib's combined first-join notice.
 Server policy is stored in `config/vein_miner.json`. Changes made through operator commands are saved immediately. Invalid numeric values and malformed identifiers are corrected to bounded defaults during reload, with warnings in the server log.
 
 Persistent player preferences are stored per world in `<world>/vein-miner-players.json`. Removing a block from the global policy does not erase it from player lists; it remains inactive unless an operator allows it again.
+
+If either file cannot be read (malformed, or written by a newer version), Vein Miner leaves it untouched: changes made with commands apply until the server stops and the command says they could not be saved. Fix the file and restart the server; for `vein_miner.json`, `/veinminer admin reload` also works.
 
 ## Compatibility
 
