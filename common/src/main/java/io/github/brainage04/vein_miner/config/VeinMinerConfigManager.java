@@ -10,16 +10,11 @@ import io.github.brainage04.vein_miner.VeinMiner;
 import java.nio.file.Path;
 import java.util.List;
 
-/**
- * The server-wide {@code vein_miner.json}. A file that fails to load keeps the current config and is not
- * overwritten until a later reload succeeds; admin changes made meanwhile apply in memory only.
- */
 public final class VeinMinerConfigManager {
     private static final Gson GSON =
             new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private static JsonFile<VeinMinerConfig> file;
     private static VeinMinerConfig config = VeinMinerConfig.createDefault();
-    /** Set by the decoder when the loaded document was migrated or corrected and should be written back. */
     private static boolean rewriteLoadedDocument;
 
     private VeinMinerConfigManager() {}
@@ -41,10 +36,6 @@ public final class VeinMinerConfigManager {
         return file.save(config).saved();
     }
 
-    /**
-     * Loads the file. A missing file is recreated with defaults; one that cannot be loaded keeps the current
-     * config and returns false.
-     */
     public static synchronized boolean reloadFromDisk() {
         rewriteLoadedDocument = false;
         return switch (file.load()) {

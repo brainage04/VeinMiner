@@ -43,7 +43,6 @@ import static net.minecraft.commands.Commands.literal;
 public final class VeinMinerCommand {
     private static final int LIST_PAGE_SIZE = 10;
     private static final ModFeedback FEEDBACK = ModFeedback.create(VeinMiner.MOD_NAME);
-    /** A second global whitelist clear within 10 seconds (200 ticks, exclusive) confirms the first. */
     private static final ConfirmationWindow<UUID> GLOBAL_WHITELIST_CLEAR =
             new ConfirmationWindow<>(10 * 20, ConfirmationWindow.Boundary.EXCLUSIVE);
 

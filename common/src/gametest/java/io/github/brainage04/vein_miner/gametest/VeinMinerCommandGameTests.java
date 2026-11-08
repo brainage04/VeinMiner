@@ -11,14 +11,12 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.MinecraftServer;
 
-/// GameTest bodies shared by the Fabric and NeoForge GameTest registrations.
 public final class VeinMinerCommandGameTests {
     private static final String TAGS = "veinminer admin selection tags ";
 
     private VeinMinerCommandGameTests() {
     }
 
-    /// Tag ids are namespaced (`c:ores`); an un-namespaced id keeps meaning `minecraft:`.
     public static void selectionTagCommandsAcceptNamespacedIds(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
         CommandDispatcher<CommandSourceStack> dispatcher = server.getCommands().getDispatcher();

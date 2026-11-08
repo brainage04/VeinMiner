@@ -10,7 +10,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
-/** Exercises the loader-neutral mining path through NeoForge's server GameTest runner. */
 @EventBusSubscriber(modid = VeinMiner.MOD_ID)
 public final class VeinMinerNeoForgeGameTest {
     @SubscribeEvent

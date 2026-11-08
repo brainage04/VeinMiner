@@ -14,10 +14,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Each player's Vein Miner preferences, stored per world in {@code vein-miner-players.json}. A file that fails to
- * load (malformed or a newer schema) is kept unchanged; changes then apply for the session only.
- */
 public final class VeinMinerPlayerSettings {
     public static final int MAX_PERSONAL_WHITELIST_SIZE = 64;
     private static final WorldPlayerStore<PlayerPreference> STORE = WorldPlayerStore

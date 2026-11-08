@@ -25,11 +25,9 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.LevelResource;
 
-/** Shared scenarios run through each loader's real command and mining hooks. */
 public final class VeinMinerBehaviourGameTests {
     private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
 
-    /** A settings file written by the previous version loads and is written back byte for byte. */
     public static void playerSettingsFromPreviousVersionLoad(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         Path file = server.getWorldPath(LevelResource.ROOT).resolve("vein-miner-players.json");
@@ -60,7 +58,6 @@ public final class VeinMinerBehaviourGameTests {
 
     private VeinMinerBehaviourGameTests() {}
 
-    /** A settings file that failed to load (malformed or a newer schema) must survive later changes and shutdown byte for byte. */
     public static void unreadablePlayerSettingsAreNotOverwritten(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         Path file = server.getWorldPath(LevelResource.ROOT).resolve("vein-miner-players.json");
@@ -276,7 +273,6 @@ public final class VeinMinerBehaviourGameTests {
             source.getServer().getCommands().getDispatcher().execute(command, source);
             throw new AssertionError("Command should have been rejected: /" + command);
         } catch (CommandSyntaxException expected) {
-            // Rejection must happen before any mutation.
         }
     }
 }
