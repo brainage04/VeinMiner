@@ -5,10 +5,12 @@ import io.github.brainage04.vein_miner.platform.ServerPlatform;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -38,8 +40,25 @@ public final class VeinMinerNeoForge implements ServerPlatform {
 
     @Override
     public void registerBlockBreak(BlockBreakCallback callback) {
-        // NeoForge 26.2 no longer exposes a cancellable block-break event; the loader mixin invokes
-        // this hook.
+        // Opt in to cancelled events: the game sends one pre-cancelled when it would refuse the break, and
+        // another mod may un-cancel it (neoforge-26.2.0.88 CommonHooks.java:600-626).
+        NeoForge.EVENT_BUS.addListener(
+                true,
+                BreakBlockEvent.class,
+                (BreakBlockEvent event) -> {
+                    // Also fired for a client's own break (neoforge-26.2.0.88-userdev
+                    // MultiPlayerGameMode.java.patch); that client-thread call must not clear the vein the
+                    // server thread recorded.
+                    if (event.getLevel() instanceof ServerLevel level
+                            && !callback.beforeBreak(
+                                    level,
+                                    event.getPlayer(),
+                                    event.getPos(),
+                                    event.getState(),
+                                    level.getBlockEntity(event.getPos()))) {
+                        event.setCanceled(true);
+                    }
+                });
     }
 
     @Override

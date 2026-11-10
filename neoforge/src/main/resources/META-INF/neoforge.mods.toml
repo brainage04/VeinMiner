@@ -41,7 +41,4 @@ ordering="NONE"
 side="BOTH"
 
 [[mixins]]
-config="vein_miner.neoforge.mixins.json"
-
-[[mixins]]
 config="vein_miner.mixins.json"
