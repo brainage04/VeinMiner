@@ -14,21 +14,80 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashSet;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.LevelResource;
+import net.neoforged.bus.api.EventPriority;
 
 public class VeinMinerNeoForgePolicyGameTests {
     private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
+
+    public void refusedOriginAtHighestPriorityMinesNoVein(GameTestHelper context) {
+        refusedOriginMinesNoVein(context, EventPriority.HIGHEST);
+    }
+
+    public void refusedOriginAtLowestPriorityMinesNoVein(GameTestHelper context) {
+        refusedOriginMinesNoVein(context, EventPriority.LOWEST);
+    }
+
+    public void releasedPreCancelledBreakMinesTheVein(GameTestHelper context) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        ConfigSnapshot snapshot = new ConfigSnapshot(config);
+        ServerPlayer player = createCreativePlayer(context, creativeOnlyTool());
+        try {
+            configureOreMining(config, 2);
+            context.setBlock(ORIGIN, Blocks.DIAMOND_ORE);
+            context.setBlock(ORIGIN.east(), Blocks.DIAMOND_ORE);
+            VeinMinerBreakInterference.releaseCanceled();
+
+            context.assertTrue(
+                    player.gameMode.destroyBlock(context.absolutePos(ORIGIN)),
+                    "Another mod's release must let the break through.");
+            context.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN);
+            context.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN.east());
+        } finally {
+            VeinMinerBreakInterference.stop();
+            snapshot.restore(config);
+            resetPlayer(player);
+        }
+        context.succeed();
+    }
+
+    private static void refusedOriginMinesNoVein(
+            GameTestHelper context, EventPriority priority) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        ConfigSnapshot snapshot = new ConfigSnapshot(config);
+        ServerPlayer player = createPlayer(context, Items.DIAMOND_PICKAXE);
+        try {
+            configureOreMining(config, 2);
+            context.setBlock(ORIGIN, Blocks.DIAMOND_ORE);
+            context.setBlock(ORIGIN.east(), Blocks.DIAMOND_ORE);
+            VeinMinerBreakInterference.refuseAt(priority, context.absolutePos(ORIGIN));
+
+            context.assertFalse(
+                    player.gameMode.destroyBlock(context.absolutePos(ORIGIN)),
+                    "Another mod's refusal must stop the break.");
+            context.assertBlockPresent(Blocks.DIAMOND_ORE, ORIGIN);
+            context.assertBlockPresent(Blocks.DIAMOND_ORE, ORIGIN.east());
+        } finally {
+            VeinMinerBreakInterference.stop();
+            snapshot.restore(config);
+            resetPlayer(player);
+        }
+        context.succeed();
+    }
 
     public void faceAdjacencyLeavesDiagonalOreIntact(GameTestHelper context) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
@@ -305,15 +364,36 @@ public class VeinMinerNeoForgePolicyGameTests {
         context.succeed();
     }
 
+    private static ServerPlayer createPlayer(GameTestHelper context, Item tool) {
+        return createPlayer(context, GameType.SURVIVAL, new ItemStack(tool));
+    }
+
+    private static ServerPlayer createCreativePlayer(GameTestHelper context, ItemStack tool) {
+        return createPlayer(context, GameType.CREATIVE, tool);
+    }
+
     private static ServerPlayer createPlayer(
-            GameTestHelper context, net.minecraft.world.item.Item tool) {
-        ServerPlayer player = (ServerPlayer) context.makeMockServerPlayer(GameType.SURVIVAL);
+            GameTestHelper context, GameType gameType, ItemStack tool) {
+        ServerPlayer player = (ServerPlayer) context.makeMockServerPlayer(gameType);
+        enable(player, tool);
+        return player;
+    }
+
+    private static ItemStack creativeOnlyTool() {
+        ItemStack pickaxe = new ItemStack(Items.DIAMOND_PICKAXE);
+        Tool tool = pickaxe.get(DataComponents.TOOL);
+        pickaxe.set(
+                DataComponents.TOOL,
+                new Tool(tool.rules(), tool.defaultMiningSpeed(), tool.damagePerBlock(), false));
+        return pickaxe;
+    }
+
+    private static void enable(ServerPlayer player, ItemStack tool) {
         player.setShiftKeyDown(false);
-        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(tool));
+        player.setItemInHand(InteractionHand.MAIN_HAND, tool);
         VeinMinerPlayerSettings.setEnabled(player, true);
         VeinMinerPlayerSettings.setActivationMode(player, ActivationMode.ALWAYS);
         VeinMinerPlayerSettings.setPersonalWhitelistEnabled(player, false);
-        return player;
     }
 
     private static void configureOreMining(VeinMinerConfig config, int limit) {

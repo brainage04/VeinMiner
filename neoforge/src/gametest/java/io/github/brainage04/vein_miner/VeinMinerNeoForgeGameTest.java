@@ -46,6 +46,18 @@ public final class VeinMinerNeoForgeGameTest {
                 policyTests::faceAdjacencyLeavesDiagonalOreIntact);
         register(
                 event,
+                "refused_origin_at_highest_priority_mines_no_vein",
+                policyTests::refusedOriginAtHighestPriorityMinesNoVein);
+        register(
+                event,
+                "refused_origin_at_lowest_priority_mines_no_vein",
+                policyTests::refusedOriginAtLowestPriorityMinesNoVein);
+        register(
+                event,
+                "released_pre_cancelled_break_mines_the_vein",
+                policyTests::releasedPreCancelledBreakMinesTheVein);
+        register(
+                event,
                 "category_limit_caps_connected_ore_count",
                 policyTests::categoryLimitCapsConnectedOreCount);
         register(
