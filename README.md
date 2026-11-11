@@ -1,6 +1,6 @@
 # Vein Miner
 
-Vein Miner is a server-side Fabric and NeoForge mod for Minecraft 26.2 that mines connected ore and tree blocks when a player breaks one eligible block. Vanilla clients can join without installing the mod.
+Vein Miner is a server-side Fabric and NeoForge mod for Minecraft 26.3 that mines connected ore and tree blocks when a player breaks one eligible block. Vanilla clients can join without installing the mod.
 
 Mining is enabled server-wide by default. Each player also has a persistent personal toggle and activation mode. The default mode is `while_sneaking`.
 
@@ -19,9 +19,9 @@ Vanilla loot tables, block entities, mining statistics, and tool checks are pres
 
 ## Getting started
 
-- Minecraft 26.2
-- Fabric Loader 0.19.3 or newer with Fabric API, or NeoForge 26.2.0.88 or newer
-- BrainageLib 1.1.0 or newer
+- Minecraft 26.3
+- Fabric Loader 0.19.5 or newer with Fabric API, or NeoForge 26.3.0.99 or newer
+- BrainageLib 1.3.0 or newer
 - Java 25 or newer
 - Install Vein Miner and BrainageLib on the server.
 
