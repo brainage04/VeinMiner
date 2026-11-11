@@ -1,8 +1,8 @@
 # VeinMiner icon
 
-## What this is
+## Overview
 
-`docs/icon/icon.png` — the mod's icon: 1024x1024 PNG, 8-bit RGBA, non-interlaced,
+`docs/icon/icon.png` is the mod's icon: a 1024x1024 PNG, 8-bit RGBA, non-interlaced,
 1,287,433 bytes, sha256
 `8418673887b0f338e9fd9b7f636320fc1c83aa900a272d3a8c3c33a661fbdc44`.
 
@@ -12,16 +12,16 @@ Blender render (Blender **5.1.1**, headless CLI, **Cycles on CPU**, 64 samples, 
 thread, 1024x1024, `-noaudio`, no display server, no GPU; 43.4 s).
 
 The scene is a staged 2x2x2 deepslate-diamond-ore cluster with a diamond pickaxe tip
-resting on its front-top corner. It is **not** a game screenshot and there is **no shader
-pack**: it is Blender Cycles rendering genuine Minecraft assets.
+resting on its front-top corner. Blender Cycles renders genuine Minecraft assets: the image
+is **not** a game screenshot and no shader pack is used.
 
 - Ore: 8 real block cells at grid cells (0,0,0) … (1,1,1), each block 0.984 units inset by
   0.008; 24 straight cyan selection edges (12 cluster boundary edges + 12 interior grid
   seams) as 3D curves; two area lights; a Fog Glow compositor glare; orthographic camera.
 - Pickaxe: a real **two-texel voxel extrusion** of the genuine 16x16 `diamond_pickaxe`
-  sprite (68 opaque texels -> 208 faces, 0.34 units thick), posed statically — no swing,
-  no motion lines.
-- Imagery provenance — genuine client-jar textures from the **Minecraft 26.2** merged
+  sprite (68 opaque texels -> 208 faces, 0.34 units thick), posed statically, with no swing
+  and no motion lines.
+- Imagery provenance: genuine client-jar textures from the **Minecraft 26.2** merged
   client jar `/home/thomas/.gradle/caches/fabric-loom/26.2/minecraft-merged.jar`:
   - `assets/minecraft/textures/block/deepslate_diamond_ore.png`, sha256 `0acd146e99716a104c6053198fa51fe0d1ef464501c123ae9a56ba3f6f957dd7`
   - `assets/minecraft/textures/item/diamond_pickaxe.png`, sha256 `dfec8e1467b335133521a42c8fde0f124ba7b5c45c0a84fba789736df4f92325`
@@ -80,7 +80,7 @@ Verify the result against `yaw-plus60-pitch30.png`'s sha256 above.
 - Environment asserts: the script requires Blender **5.1.1**, `DISPLAY`/`WAYLAND_DISPLAY`
   unset, `-noaudio`, background mode, CPU affinity of at most 2 CPUs, and (when rendering)
   membership of the shared `render-blender.service` cgroup with `cpu.weight == 20`. Outside
-  that cgroup the assert fires after rendering — relax that assert if you render elsewhere.
+  that cgroup the assert fires after rendering; relax that assert if you render elsewhere.
 - `verify_images.py` walks all four round-3 candidates (30/40/50/60) and therefore cannot
   run unmodified with only the selected candidate present; the per-image facts it checks are
   recorded in `image-verification.json`.
