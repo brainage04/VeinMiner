@@ -20,11 +20,15 @@ public final class VeinMinerConfigManager {
     private VeinMinerConfigManager() {}
 
     public static synchronized void initialize(Path configDirectory) {
-        file = JsonFile.builder(configDirectory.resolve("vein_miner.json"), GSON, VeinMinerConfig.class)
-                .decoder(VeinMinerConfigManager::decode)
-                .description("Vein Miner config")
-                .logger(VeinMiner.LOGGER)
-                .build();
+        file =
+                JsonFile.builder(
+                                configDirectory.resolve("vein_miner.json"),
+                                GSON,
+                                VeinMinerConfig.class)
+                        .decoder(VeinMinerConfigManager::decode)
+                        .description("Vein Miner config")
+                        .logger(VeinMiner.LOGGER)
+                        .build();
         reloadFromDisk();
     }
 

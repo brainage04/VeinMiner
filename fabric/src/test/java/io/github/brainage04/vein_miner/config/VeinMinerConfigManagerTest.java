@@ -13,8 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class VeinMinerConfigManagerTest {
-    @TempDir
-    Path directory;
+    @TempDir Path directory;
 
     @Test
     void malformedLegacyLimitKeepsCategoryDefaultsAndRequestsRewrite() {
@@ -43,7 +42,12 @@ class VeinMinerConfigManagerTest {
         // The previous version wrote the config with this Gson and no trailing newline.
         VeinMinerConfig written = VeinMinerConfig.createDefault();
         written.maxOreBlocks = 17;
-        String previous = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(written);
+        String previous =
+                new GsonBuilder()
+                        .setPrettyPrinting()
+                        .disableHtmlEscaping()
+                        .create()
+                        .toJson(written);
         Path path = directory.resolve("vein_miner.json");
         Files.writeString(path, previous);
 

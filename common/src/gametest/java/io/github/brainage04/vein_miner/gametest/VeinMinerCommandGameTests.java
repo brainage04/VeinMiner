@@ -14,8 +14,7 @@ import net.minecraft.server.MinecraftServer;
 public final class VeinMinerCommandGameTests {
     private static final String TAGS = "veinminer admin selection tags ";
 
-    private VeinMinerCommandGameTests() {
-    }
+    private VeinMinerCommandGameTests() {}
 
     public static void selectionTagCommandsAcceptNamespacedIds(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
@@ -35,9 +34,12 @@ public final class VeinMinerCommandGameTests {
             assertSelection(List.of("minecraft:logs"), config.deniedTags, "denied");
 
             List<String> removable = suggestions(dispatcher, source, TAGS + "allow remove ");
-            assertTrue(removable.equals(List.of("c:ores", "minecraft:planks")),
+            assertTrue(
+                    removable.equals(List.of("c:ores", "minecraft:planks")),
                     "Expected remove to suggest the allowed tags, got " + removable);
-            assertTrue(suggestions(dispatcher, source, TAGS + "deny add minecraft:lo").contains("minecraft:logs"),
+            assertTrue(
+                    suggestions(dispatcher, source, TAGS + "deny add minecraft:lo")
+                            .contains("minecraft:logs"),
                     "Expected add to suggest block tags");
 
             run(dispatcher, source, TAGS + "allow remove c:ores");
@@ -53,12 +55,16 @@ public final class VeinMinerCommandGameTests {
         helper.succeed();
     }
 
-    private static void run(CommandDispatcher<CommandSourceStack> dispatcher, CommandSourceStack source, String command) {
+    private static void run(
+            CommandDispatcher<CommandSourceStack> dispatcher,
+            CommandSourceStack source,
+            String command) {
         int result;
         try {
             result = dispatcher.execute(command, source);
         } catch (CommandSyntaxException exception) {
-            throw new AssertionError("/" + command + " was rejected: " + exception.getMessage(), exception);
+            throw new AssertionError(
+                    "/" + command + " was rejected: " + exception.getMessage(), exception);
         }
         assertTrue(result == 1, "/" + command + " did not succeed");
     }
@@ -66,15 +72,21 @@ public final class VeinMinerCommandGameTests {
     private static List<String> suggestions(
             CommandDispatcher<CommandSourceStack> dispatcher,
             CommandSourceStack source,
-            String partialCommand
-    ) {
-        return dispatcher.getCompletionSuggestions(dispatcher.parse(partialCommand, source)).join().getList().stream()
+            String partialCommand) {
+        return dispatcher
+                .getCompletionSuggestions(dispatcher.parse(partialCommand, source))
+                .join()
+                .getList()
+                .stream()
                 .map(Suggestion::getText)
                 .toList();
     }
 
-    private static void assertSelection(List<String> expected, LinkedHashSet<String> actual, String name) {
-        assertTrue(List.copyOf(actual).equals(expected), "Expected " + name + " tags " + expected + ", got " + actual);
+    private static void assertSelection(
+            List<String> expected, LinkedHashSet<String> actual, String name) {
+        assertTrue(
+                List.copyOf(actual).equals(expected),
+                "Expected " + name + " tags " + expected + ", got " + actual);
     }
 
     private static void assertTrue(boolean condition, String message) {

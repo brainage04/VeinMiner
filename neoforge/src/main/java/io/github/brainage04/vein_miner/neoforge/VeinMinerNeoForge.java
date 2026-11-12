@@ -40,14 +40,17 @@ public final class VeinMinerNeoForge implements ServerPlatform {
 
     @Override
     public void registerBlockBreak(BlockBreakCallback callback) {
-        // Opt in to cancelled events: the game sends one pre-cancelled when it would refuse the break, and
+        // Opt in to cancelled events: the game sends one pre-cancelled when it would refuse the
+        // break, and
         // another mod may un-cancel it (neoforge-26.3.0.99 CommonHooks.java:606-632).
         NeoForge.EVENT_BUS.addListener(
                 true,
                 BreakBlockEvent.class,
                 (BreakBlockEvent event) -> {
-                    // Also fired for a client's own break (neoforge-26.3.0.99 MultiPlayerGameMode and
-                    // ServerPlayerGameMode both call CommonHooks.fireBlockBreak); that client-thread call
+                    // Also fired for a client's own break (neoforge-26.3.0.99 MultiPlayerGameMode
+                    // and
+                    // ServerPlayerGameMode both call CommonHooks.fireBlockBreak); that
+                    // client-thread call
                     // must not clear the vein the server thread recorded.
                     if (event.getLevel() instanceof ServerLevel level
                             && !callback.beforeBreak(

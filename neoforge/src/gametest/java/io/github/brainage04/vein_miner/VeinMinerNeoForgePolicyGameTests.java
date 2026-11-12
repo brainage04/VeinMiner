@@ -65,8 +65,7 @@ public class VeinMinerNeoForgePolicyGameTests {
         context.succeed();
     }
 
-    private static void refusedOriginMinesNoVein(
-            GameTestHelper context, EventPriority priority) {
+    private static void refusedOriginMinesNoVein(GameTestHelper context, EventPriority priority) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         ConfigSnapshot snapshot = new ConfigSnapshot(config);
         ServerPlayer player = createPlayer(context, Items.DIAMOND_PICKAXE);

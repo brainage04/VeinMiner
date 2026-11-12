@@ -1,7 +1,7 @@
 package io.github.brainage04.vein_miner;
 
-import io.github.brainage04.vein_miner.gametest.VeinMinerCommandGameTests;
 import io.github.brainage04.vein_miner.gametest.VeinMinerBehaviourGameTests;
+import io.github.brainage04.vein_miner.gametest.VeinMinerCommandGameTests;
 import io.github.brainage04.vein_miner.leaf.VeinMinerLeafGameTests;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -16,21 +16,37 @@ public final class VeinMinerNeoForgeGameTest {
     public static void registerTestFunctions(RegisterEvent event) {
         VeinMinerNeoForgeMiningGameTests miningTests = new VeinMinerNeoForgeMiningGameTests();
         VeinMinerNeoForgePolicyGameTests policyTests = new VeinMinerNeoForgePolicyGameTests();
-        register(event, "queued_decay_honours_disable_and_shutdown",
+        register(
+                event,
+                "queued_decay_honours_disable_and_shutdown",
                 VeinMinerLeafGameTests::queuedDecayHonoursDisableAndShutdown);
-        register(event, "queued_decay_honours_random_tick_rule_and_leaf_state",
+        register(
+                event,
+                "queued_decay_honours_random_tick_rule_and_leaf_state",
                 VeinMinerLeafGameTests::queuedDecayHonoursRandomTickRuleAndLeafState);
-        register(event, "unreadable_player_settings_are_not_overwritten",
+        register(
+                event,
+                "unreadable_player_settings_are_not_overwritten",
                 VeinMinerBehaviourGameTests::unreadablePlayerSettingsAreNotOverwritten);
-        register(event, "player_settings_from_previous_version_load",
+        register(
+                event,
+                "player_settings_from_previous_version_load",
                 VeinMinerBehaviourGameTests::playerSettingsFromPreviousVersionLoad);
-        register(event, "global_clear_confirmation_does_not_survive_shutdown",
+        register(
+                event,
+                "global_clear_confirmation_does_not_survive_shutdown",
                 VeinMinerBehaviourGameTests::globalClearConfirmationDoesNotSurviveShutdown);
-        register(event, "activation_and_toggles_control_connected_mining",
+        register(
+                event,
+                "activation_and_toggles_control_connected_mining",
                 VeinMinerBehaviourGameTests::activationAndTogglesControlConnectedMining);
-        register(event, "personal_commands_persist_and_cannot_override_server_denials",
+        register(
+                event,
+                "personal_commands_persist_and_cannot_override_server_denials",
                 VeinMinerBehaviourGameTests::personalCommandsPersistAndCannotOverrideServerDenials);
-        register(event, "admin_commands_persist_settings_and_reject_invalid_limits",
+        register(
+                event,
+                "admin_commands_persist_settings_and_reject_invalid_limits",
                 VeinMinerBehaviourGameTests::adminCommandsPersistSettingsAndRejectInvalidLimits);
         register(
                 event,
@@ -107,5 +123,4 @@ public final class VeinMinerNeoForgeGameTest {
                 Identifier.fromNamespaceAndPath(VeinMiner.MOD_ID, path),
                 () -> function);
     }
-
 }
