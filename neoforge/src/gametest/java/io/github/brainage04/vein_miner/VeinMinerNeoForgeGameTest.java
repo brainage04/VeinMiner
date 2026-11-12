@@ -2,11 +2,15 @@ package io.github.brainage04.vein_miner;
 
 import io.github.brainage04.vein_miner.gametest.VeinMinerBehaviourGameTests;
 import io.github.brainage04.vein_miner.gametest.VeinMinerCommandGameTests;
+import io.github.brainage04.vein_miner.gametest.VeinMinerMiningGameTests;
+import io.github.brainage04.vein_miner.gametest.VeinMinerPolicyGameTests;
 import io.github.brainage04.vein_miner.leaf.VeinMinerLeafGameTests;
+import java.util.function.Consumer;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
@@ -14,8 +18,6 @@ import net.neoforged.neoforge.registries.RegisterEvent;
 public final class VeinMinerNeoForgeGameTest {
     @SubscribeEvent
     public static void registerTestFunctions(RegisterEvent event) {
-        VeinMinerNeoForgeMiningGameTests miningTests = new VeinMinerNeoForgeMiningGameTests();
-        VeinMinerNeoForgePolicyGameTests policyTests = new VeinMinerNeoForgePolicyGameTests();
         register(
                 event,
                 "queued_decay_honours_disable_and_shutdown",
@@ -51,43 +53,48 @@ public final class VeinMinerNeoForgeGameTest {
         register(
                 event,
                 "connected_ore_vein_drops_respect_telekinesis_compatibility",
-                miningTests::connectedOreVeinDropsRespectTelekinesisCompatibility);
+                helper ->
+                        VeinMinerMiningGameTests
+                                .connectedOreVeinDropsRespectTelekinesisCompatibility(
+                                        helper, telekinesisLoaded()));
         register(
                 event,
                 "equivalent_ore_block_types_form_one_vein",
-                miningTests::equivalentOreBlockTypesFormOneVein);
+                helper ->
+                        VeinMinerMiningGameTests.equivalentOreBlockTypesFormOneVein(
+                                helper, telekinesisLoaded()));
         register(
                 event,
                 "face_adjacency_leaves_diagonal_ore_intact",
-                policyTests::faceAdjacencyLeavesDiagonalOreIntact);
+                VeinMinerPolicyGameTests::faceAdjacencyLeavesDiagonalOreIntact);
         register(
                 event,
                 "refused_origin_at_highest_priority_mines_no_vein",
-                policyTests::refusedOriginAtHighestPriorityMinesNoVein);
+                VeinMinerNeoForgePolicyGameTests::refusedOriginAtHighestPriorityMinesNoVein);
         register(
                 event,
                 "refused_origin_at_lowest_priority_mines_no_vein",
-                policyTests::refusedOriginAtLowestPriorityMinesNoVein);
+                VeinMinerNeoForgePolicyGameTests::refusedOriginAtLowestPriorityMinesNoVein);
         register(
                 event,
                 "released_pre_cancelled_break_mines_the_vein",
-                policyTests::releasedPreCancelledBreakMinesTheVein);
+                VeinMinerNeoForgePolicyGameTests::releasedPreCancelledBreakMinesTheVein);
         register(
                 event,
                 "category_limit_caps_connected_ore_count",
-                policyTests::categoryLimitCapsConnectedOreCount);
+                VeinMinerPolicyGameTests::categoryLimitCapsConnectedOreCount);
         register(
                 event,
                 "additional_blocks_use_configured_costs_and_award_mining_stats",
-                policyTests::additionalBlocksUseConfiguredCostsAndAwardMiningStats);
+                VeinMinerPolicyGameTests::additionalBlocksUseConfiguredCostsAndAwardMiningStats);
         register(
                 event,
                 "tool_protection_stops_before_last_durability_point",
-                policyTests::toolProtectionStopsBeforeLastDurabilityPoint);
+                VeinMinerPolicyGameTests::toolProtectionStopsBeforeLastDurabilityPoint);
         register(
                 event,
                 "better_tree_mining_connects_stripped_wood_family",
-                policyTests::betterTreeMiningConnectsStrippedWoodFamily);
+                VeinMinerPolicyGameTests::betterTreeMiningConnectsStrippedWoodFamily);
         register(
                 event,
                 "selection_tag_commands_accept_namespaced_ids",
@@ -95,29 +102,31 @@ public final class VeinMinerNeoForgeGameTest {
         register(
                 event,
                 "deny_tag_overrides_allowed_block",
-                policyTests::denyTagOverridesAllowedBlock);
+                VeinMinerPolicyGameTests::denyTagOverridesAllowedBlock);
         register(
                 event,
                 "personal_whitelist_further_narrows_server_selection",
-                policyTests::personalWhitelistFurtherNarrowsServerSelection);
+                VeinMinerPolicyGameTests::personalWhitelistFurtherNarrowsServerSelection);
         register(
                 event,
                 "fast_leaf_decay_has_an_independent_master_switch",
-                policyTests::fastLeafDecayHasAnIndependentMasterSwitch);
+                VeinMinerPolicyGameTests::fastLeafDecayHasAnIndependentMasterSwitch);
         register(
                 event,
                 "player_toggle_is_persisted_in_world_storage",
-                policyTests::playerToggleIsPersistedInWorldStorage);
+                VeinMinerPolicyGameTests::playerToggleIsPersistedInWorldStorage);
         register(
                 event,
                 "combined_server_help_includes_vein_miner",
-                policyTests::combinedServerHelpIncludesVeinMiner);
+                VeinMinerPolicyGameTests::combinedServerHelpIncludesVeinMiner);
+    }
+
+    private static boolean telekinesisLoaded() {
+        return ModList.get().isLoaded("telekinesis");
     }
 
     private static void register(
-            RegisterEvent event,
-            String path,
-            java.util.function.Consumer<GameTestHelper> function) {
+            RegisterEvent event, String path, Consumer<GameTestHelper> function) {
         event.register(
                 BuiltInRegistries.TEST_FUNCTION.key(),
                 Identifier.fromNamespaceAndPath(VeinMiner.MOD_ID, path),

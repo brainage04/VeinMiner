@@ -1,5 +1,9 @@
 package io.github.brainage04.vein_miner.gametest;
 
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.ORIGIN;
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.allowBlock;
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.resetPlayer;
+
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.brainage04.brainagelib.gametest.GameTestPlayer;
 import io.github.brainage04.vein_miner.command.VeinMinerCommand;
@@ -15,7 +19,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -26,8 +29,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.LevelResource;
 
 public final class VeinMinerBehaviourGameTests {
-    private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
-
     public static void playerSettingsFromPreviousVersionLoad(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         Path file = server.getWorldPath(LevelResource.ROOT).resolve("vein-miner-players.json");
@@ -129,7 +130,7 @@ public final class VeinMinerBehaviourGameTests {
             config.maxOreBlocks = 2;
             config.deniedBlocks.clear();
             config.deniedTags.clear();
-            config.addBlockToWhitelist(Blocks.DIAMOND_ORE);
+            allowBlock(config, Blocks.DIAMOND_ORE);
             for (ActivationMode mode : ActivationMode.values()) {
                 VeinMinerPlayerSettings.setActivationMode(player, mode);
                 for (boolean sneaking : new boolean[] {false, true}) {
@@ -177,7 +178,7 @@ public final class VeinMinerBehaviourGameTests {
         try {
             config.deniedBlocks.clear();
             config.deniedTags.clear();
-            config.addBlockToWhitelist(Blocks.DIAMOND_ORE);
+            allowBlock(config, Blocks.DIAMOND_ORE);
             run(source, "veinminer whitelist add minecraft:diamond_ore");
             helper.assertTrue(
                     VeinMinerPlayerSettings.isPersonalWhitelistEnabled(player),
@@ -187,6 +188,12 @@ public final class VeinMinerBehaviourGameTests {
             helper.assertTrue(
                     fixture.received("[Vein Miner] Your Vein Miner toggle is now disabled."),
                     "The player must be told about the change, got " + fixture.messageTexts());
+            run(source, "veinminer help");
+            helper.assertTrue(
+                    fixture.received("[Vein Miner] Player commands:")
+                            && fixture.received(
+                                    "[Vein Miner] /veinminer whitelist add or remove <block> - change your list"),
+                    "Help must list the player commands, got " + fixture.messageTexts());
             VeinMinerPlayerSettings.load(helper.getLevel().getServer());
             helper.assertTrue(
                     !VeinMinerPlayerSettings.isEnabled(player),
@@ -276,7 +283,7 @@ public final class VeinMinerBehaviourGameTests {
                         .withEntity(player)
                         .withSuppressedOutput();
         try {
-            config.addBlockToWhitelist(Blocks.DIAMOND_ORE);
+            allowBlock(config, Blocks.DIAMOND_ORE);
             run(source, "veinminer admin selection blocks allow clear");
             helper.assertTrue(!config.whitelist.isEmpty(), "First clear must request confirmation");
             VeinMinerCommand.shutdown(source.getServer());
@@ -315,13 +322,6 @@ public final class VeinMinerBehaviourGameTests {
         helper.assertTrue(
                 helper.getBlockState(ORIGIN.east()).isAir() == connectedMined,
                 "Connected mining did not match the activation/tool policy");
-    }
-
-    private static void resetPlayer(ServerPlayer player) {
-        VeinMinerPlayerSettings.setEnabled(player, true);
-        VeinMinerPlayerSettings.setActivationMode(player, ActivationMode.WHILE_SNEAKING);
-        VeinMinerPlayerSettings.clearPersonalWhitelist(player);
-        VeinMinerPlayerSettings.setPersonalWhitelistEnabled(player, false);
     }
 
     private static int execute(CommandSourceStack source, String command) {
