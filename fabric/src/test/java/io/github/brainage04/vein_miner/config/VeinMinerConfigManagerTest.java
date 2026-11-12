@@ -38,8 +38,9 @@ class VeinMinerConfigManagerTest {
     }
 
     @Test
-    void configWrittenByThePreviousVersionLoadsAndKeepsItsFormat() throws IOException {
-        // The previous version wrote the config with this Gson and no trailing newline.
+    void configWrittenByThePreviousVersionLoadsAndSavesWithALineBreak() throws IOException {
+        // The previous version wrote the config with this Gson and no trailing newline; ConfigFile
+        // writes the same document and ends it with a line break.
         VeinMinerConfig written = VeinMinerConfig.createDefault();
         written.maxOreBlocks = 17;
         String previous =
@@ -54,7 +55,7 @@ class VeinMinerConfigManagerTest {
         VeinMinerConfigManager.initialize(directory);
         assertEquals(17, VeinMinerConfigManager.getConfig().maxOreBlocks);
         assertTrue(VeinMinerConfigManager.saveToDisk());
-        assertEquals(previous, Files.readString(path));
+        assertEquals(previous + "\n", Files.readString(path));
     }
 
     @Test
@@ -82,5 +83,22 @@ class VeinMinerConfigManagerTest {
         assertTrue(VeinMinerConfigManager.reloadFromDisk());
         assertEquals(9, VeinMinerConfigManager.getConfig().maxOreBlocks);
         assertTrue(VeinMinerConfigManager.saveToDisk());
+    }
+
+    @Test
+    void reloadAfterDeletingTheFileRestoresDefaultsAndRecreatesIt() throws IOException {
+        Path path = directory.resolve("vein_miner.json");
+
+        VeinMinerConfigManager.initialize(directory);
+        assertTrue(Files.exists(path), "A missing config must be created with the defaults");
+        VeinMinerConfigManager.getConfig().maxOreBlocks = 5;
+        assertTrue(VeinMinerConfigManager.saveToDisk());
+
+        Files.delete(path);
+        assertTrue(VeinMinerConfigManager.reloadFromDisk());
+        assertEquals(
+                VeinMinerConfig.DEFAULT_MAX_ORE_BLOCKS,
+                VeinMinerConfigManager.getConfig().maxOreBlocks);
+        assertTrue(Files.exists(path), "A reload must recreate a deleted config");
     }
 }

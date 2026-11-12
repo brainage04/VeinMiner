@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import io.github.brainage04.brainagelib.storage.ConfigFile;
 import io.github.brainage04.brainagelib.storage.JsonFile;
 import io.github.brainage04.vein_miner.VeinMiner;
 import java.nio.file.Path;
@@ -13,18 +14,18 @@ import java.util.List;
 public final class VeinMinerConfigManager {
     private static final Gson GSON =
             new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-    private static JsonFile<VeinMinerConfig> file;
-    private static VeinMinerConfig config = VeinMinerConfig.createDefault();
+    private static ConfigFile<VeinMinerConfig> file;
     private static boolean rewriteLoadedDocument;
 
     private VeinMinerConfigManager() {}
 
     public static synchronized void initialize(Path configDirectory) {
         file =
-                JsonFile.builder(
+                ConfigFile.builder(
                                 configDirectory.resolve("vein_miner.json"),
                                 GSON,
-                                VeinMinerConfig.class)
+                                VeinMinerConfig.class,
+                                VeinMinerConfig.createDefault())
                         .decoder(VeinMinerConfigManager::decode)
                         .description("Vein Miner config")
                         .logger(VeinMiner.LOGGER)
@@ -33,24 +34,21 @@ public final class VeinMinerConfigManager {
     }
 
     public static synchronized VeinMinerConfig getConfig() {
-        return config;
+        return file.value();
     }
 
     public static synchronized boolean saveToDisk() {
-        return file.save(config).saved();
+        return file.save();
     }
 
     public static synchronized boolean reloadFromDisk() {
         rewriteLoadedDocument = false;
-        return switch (file.load()) {
-            case JsonFile.LoadResult.Missing<VeinMinerConfig> missing -> {
-                config = VeinMinerConfig.createDefault();
-                yield saveToDisk();
-            }
-            case JsonFile.LoadResult.Loaded<VeinMinerConfig>(VeinMinerConfig loaded) -> {
-                config = loaded;
+        return switch (file.loadOrCreate()) {
+            // loadOrCreate only logs a failed write of the default; the reload command reports it.
+            case JsonFile.LoadResult.Missing<VeinMinerConfig> missing -> file.save();
+            case JsonFile.LoadResult.Loaded<VeinMinerConfig> loaded -> {
                 if (rewriteLoadedDocument) {
-                    saveToDisk();
+                    file.save();
                 }
                 yield true;
             }
