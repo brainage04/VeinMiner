@@ -59,6 +59,28 @@ public class VeinMinerPolicyGameTest {
     }
 
     @GameTest
+    public void blocksBeyondTheWorldBorderAreNotMined(GameTestHelper context) {
+        VeinMinerPolicyGameTests.blocksBeyondTheWorldBorderAreNotMined(context);
+    }
+
+    @GameTest
+    public void borderMovedDuringTheVeinStopsTheVeinThere(GameTestHelper context) {
+        VeinMinerPolicyGameTests.borderMovedDuringTheVeinStopsTheVeinThere(
+                context, VeinMinerFabricBreakInterference.INSTANCE);
+    }
+
+    @GameTest
+    public void refusedExtraBlockStaysWhileTheRestIsMined(GameTestHelper context) {
+        VeinMinerPolicyGameTests.refusedExtraBlockStaysWhileTheRestIsMined(
+                context, VeinMinerFabricBreakInterference.INSTANCE);
+    }
+
+    @GameTest
+    public void veinSearchLeavesUnloadedChunksUnloaded(GameTestHelper context) {
+        VeinMinerPolicyGameTests.veinSearchLeavesUnloadedChunksUnloaded(context);
+    }
+
+    @GameTest
     public void additionalBlocksUseConfiguredCostsAndAwardMiningStats(GameTestHelper context) {
         VeinMinerPolicyGameTests.additionalBlocksUseConfiguredCostsAndAwardMiningStats(context);
     }

@@ -5,35 +5,48 @@ import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.all
 import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.configureOreMining;
 import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.createPlayer;
 import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.destroyOrigin;
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.moveEastBorderTo;
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.prepareVeinMiner;
 import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.resetPlayer;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.github.brainage04.brainagelib.gametest.GameTestPlayer;
 import io.github.brainage04.brainagelib.help.ServerModHelpRegistry;
 import io.github.brainage04.vein_miner.VeinMiner;
 import io.github.brainage04.vein_miner.config.AdjacencyMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
+import io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.BreakInterference;
 import io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.ConfigSnapshot;
 import io.github.brainage04.vein_miner.leaf.LeafDecayRateHandler;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.AABB;
 
 /** Server selection, limits, costs and settings storage, registered by both loaders. */
 public final class VeinMinerPolicyGameTests {
+    private static final int FAR_CHUNK_OFFSET = 1000;
+
     private VeinMinerPolicyGameTests() {}
 
     public static void faceAdjacencyLeavesDiagonalOreIntact(GameTestHelper helper) {
@@ -74,6 +87,144 @@ public final class VeinMinerPolicyGameTests {
             helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN.east());
             helper.assertBlockPresent(Blocks.DIAMOND_ORE, ORIGIN.east(2));
         } finally {
+            snapshot.restore(config);
+            resetPlayer(player);
+        }
+        helper.succeed();
+    }
+
+    public static void blocksBeyondTheWorldBorderAreNotMined(GameTestHelper helper) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        ConfigSnapshot snapshot = new ConfigSnapshot(config);
+        ServerPlayer player = createPlayer(helper, Items.DIAMOND_PICKAXE);
+        Runnable restoreBorder = () -> {};
+        try {
+            configureOreMining(config, 4);
+            helper.setBlock(ORIGIN, Blocks.DIAMOND_ORE);
+            helper.setBlock(ORIGIN.east(), Blocks.DIAMOND_ORE);
+            helper.setBlock(ORIGIN.east(2), Blocks.DIAMOND_ORE);
+            helper.setBlock(ORIGIN.east(3), Blocks.DIAMOND_ORE);
+            restoreBorder = moveEastBorderTo(helper, ORIGIN.east(2));
+
+            destroyOrigin(helper, player);
+
+            helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN);
+            helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN.east());
+            helper.assertBlockPresent(Blocks.DIAMOND_ORE, ORIGIN.east(2));
+            helper.assertBlockPresent(Blocks.DIAMOND_ORE, ORIGIN.east(3));
+        } finally {
+            restoreBorder.run();
+            snapshot.restore(config);
+            resetPlayer(player);
+        }
+        helper.succeed();
+    }
+
+    public static void borderMovedDuringTheVeinStopsTheVeinThere(
+            GameTestHelper helper, BreakInterference interference) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        ConfigSnapshot snapshot = new ConfigSnapshot(config);
+        ServerPlayer player = createPlayer(helper, Items.DIAMOND_PICKAXE);
+        Runnable[] restoreBorder = {() -> {}};
+        try {
+            configureOreMining(config, 3);
+            helper.setBlock(ORIGIN, Blocks.DIAMOND_ORE);
+            helper.setBlock(ORIGIN.east(), Blocks.DIAMOND_ORE);
+            helper.setBlock(ORIGIN.east(2), Blocks.DIAMOND_ORE);
+            interference.runBefore(
+                    helper.absolutePos(ORIGIN.east()),
+                    () -> restoreBorder[0] = moveEastBorderTo(helper, ORIGIN.east(2)));
+
+            destroyOrigin(helper, player);
+
+            helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN);
+            helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN.east());
+            helper.assertBlockPresent(Blocks.DIAMOND_ORE, ORIGIN.east(2));
+        } finally {
+            interference.stop();
+            restoreBorder[0].run();
+            snapshot.restore(config);
+            resetPlayer(player);
+        }
+        helper.succeed();
+    }
+
+    public static void refusedExtraBlockStaysWhileTheRestIsMined(
+            GameTestHelper helper, BreakInterference interference) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        ConfigSnapshot snapshot = new ConfigSnapshot(config);
+        // A joined player: Fabric answers a refused break with a block update to its connection.
+        GameTestPlayer joined = GameTestPlayer.mock(helper, GameType.SURVIVAL);
+        ServerPlayer player = joined.player();
+        prepareVeinMiner(player, new ItemStack(Items.DIAMOND_PICKAXE));
+        try {
+            configureOreMining(config, 3);
+            helper.setBlock(ORIGIN, Blocks.DIAMOND_ORE);
+            helper.setBlock(ORIGIN.east(), Blocks.DIAMOND_ORE);
+            helper.setBlock(ORIGIN.west(), Blocks.DIAMOND_ORE);
+            interference.refuseAt(helper.absolutePos(ORIGIN.east()));
+
+            destroyOrigin(helper, player);
+
+            helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN);
+            helper.assertBlockPresent(Blocks.DIAMOND_ORE, ORIGIN.east());
+            helper.assertBlockNotPresent(Blocks.DIAMOND_ORE, ORIGIN.west());
+        } finally {
+            interference.stop();
+            snapshot.restore(config);
+            resetPlayer(player);
+            joined.close();
+        }
+        helper.succeed();
+    }
+
+    public static void veinSearchLeavesUnloadedChunksUnloaded(GameTestHelper helper) {
+        VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        ConfigSnapshot snapshot = new ConfigSnapshot(config);
+        ServerPlayer player = createPlayer(helper, Items.DIAMOND_PICKAXE);
+        ServerLevel level = helper.getLevel();
+        // Far from every test structure, so writing the vein loads its chunk and none east of it.
+        ChunkPos testChunk = ChunkPos.containing(helper.absolutePos(ORIGIN));
+        ChunkPos chunk = new ChunkPos(testChunk.x() + FAR_CHUNK_OFFSET, testChunk.z());
+        BlockPos edge =
+                new BlockPos(
+                        chunk.getMaxBlockX(),
+                        helper.absolutePos(ORIGIN).getY(),
+                        chunk.getMiddleBlockZ());
+        BlockPos middle = edge.west();
+        BlockPos origin = middle.west();
+        BlockPos beyond = edge.east();
+        // Neighbour and shape updates around the edge block would read, and so load, the chunk
+        // east of it.
+        int quietFlags = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+        try {
+            configureOreMining(config, 8);
+            // Breaking the edge block would update its neighbours in the next chunk, so tool
+            // protection lets the vein mine the middle block and stops before the edge.
+            ItemStack tool = player.getMainHandItem();
+            tool.setDamageValue(tool.getMaxDamage() - 3);
+            for (BlockPos pos : List.of(origin, middle, edge)) {
+                level.setBlock(pos, Blocks.DIAMOND_ORE.defaultBlockState(), quietFlags);
+            }
+            helper.assertFalse(
+                    level.isLoaded(beyond), "The chunk east of the vein must start unloaded.");
+
+            helper.assertTrue(
+                    player.gameMode.destroyBlock(origin), "Expected the origin to be destroyed.");
+
+            helper.assertTrue(
+                    level.getBlockState(middle).isAir(), "Expected the vein to mine its middle.");
+            helper.assertTrue(
+                    level.getBlockState(edge).is(Blocks.DIAMOND_ORE),
+                    "Expected tool protection to keep the edge block.");
+            helper.assertFalse(
+                    level.isLoaded(beyond), "The vein search loaded the chunk east of the vein.");
+        } finally {
+            level.setBlock(edge, Blocks.AIR.defaultBlockState(), quietFlags);
+            for (ItemEntity item :
+                    level.getEntitiesOfClass(ItemEntity.class, new AABB(origin).inflate(3.0D))) {
+                item.discard();
+            }
             snapshot.restore(config);
             resetPlayer(player);
         }

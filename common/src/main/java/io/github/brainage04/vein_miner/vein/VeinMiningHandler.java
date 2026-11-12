@@ -122,6 +122,12 @@ public final class VeinMiningHandler {
                         }
 
                         BlockPos neighborPos = BlockPos.of(neighbor);
+                        // Reading a block in a chunk that is not loaded loads or generates it on
+                        // the server thread (Level.java:353-360).
+                        if (!pending.level.isLoaded(neighborPos)
+                                || !pending.player.mayInteract(pending.level, neighborPos)) {
+                            continue;
+                        }
                         BlockState neighborState = pending.level.getBlockState(neighborPos);
                         if (!config.isBlockWhitelisted(neighborState)
                                 || !VeinMinerPlayerSettings.allowsBlock(
@@ -143,6 +149,11 @@ public final class VeinMiningHandler {
         try {
             for (long packedPos : connected) {
                 BlockPos targetPos = BlockPos.of(packedPos);
+                // Another mod's break listener may move the world border or change the ops
+                // while earlier blocks of the vein break.
+                if (!pending.player.mayInteract(pending.level, targetPos)) {
+                    continue;
+                }
                 BlockState targetState = pending.level.getBlockState(targetPos);
                 ItemStack currentTool = pending.player.getMainHandItem();
                 if (!config.isBlockWhitelisted(targetState)

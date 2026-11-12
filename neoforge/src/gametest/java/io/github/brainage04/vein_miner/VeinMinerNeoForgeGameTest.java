@@ -85,6 +85,26 @@ public final class VeinMinerNeoForgeGameTest {
                 VeinMinerPolicyGameTests::categoryLimitCapsConnectedOreCount);
         register(
                 event,
+                "blocks_beyond_the_world_border_are_not_mined",
+                VeinMinerPolicyGameTests::blocksBeyondTheWorldBorderAreNotMined);
+        register(
+                event,
+                "border_moved_during_the_vein_stops_the_vein_there",
+                helper ->
+                        VeinMinerPolicyGameTests.borderMovedDuringTheVeinStopsTheVeinThere(
+                                helper, VeinMinerBreakInterference.AT_HIGHEST_PRIORITY));
+        register(
+                event,
+                "refused_extra_block_stays_while_the_rest_is_mined",
+                helper ->
+                        VeinMinerPolicyGameTests.refusedExtraBlockStaysWhileTheRestIsMined(
+                                helper, VeinMinerBreakInterference.AT_HIGHEST_PRIORITY));
+        register(
+                event,
+                "vein_search_leaves_unloaded_chunks_unloaded",
+                VeinMinerPolicyGameTests::veinSearchLeavesUnloadedChunksUnloaded);
+        register(
+                event,
                 "additional_blocks_use_configured_costs_and_award_mining_stats",
                 VeinMinerPolicyGameTests::additionalBlocksUseConfiguredCostsAndAwardMiningStats);
         register(

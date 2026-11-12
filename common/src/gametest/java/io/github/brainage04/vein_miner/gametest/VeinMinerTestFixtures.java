@@ -19,10 +19,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.border.WorldBorder;
 
 /** Players, config set-up and counters shared by the GameTests of both loaders. */
 public final class VeinMinerTestFixtures {
     public static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
+    private static final double BORDER_TEST_SIZE = 64.0D;
 
     private VeinMinerTestFixtures() {}
 
@@ -38,12 +40,17 @@ public final class VeinMinerTestFixtures {
     public static ServerPlayer createPlayer(
             GameTestHelper helper, GameType gameType, ItemStack tool) {
         ServerPlayer player = (ServerPlayer) helper.makeMockServerPlayer(gameType);
+        prepareVeinMiner(player, tool);
+        return player;
+    }
+
+    /** Makes {@code player} vein mine with every break while holding {@code tool}. */
+    public static void prepareVeinMiner(ServerPlayer player, ItemStack tool) {
         player.setShiftKeyDown(false);
         player.setItemInHand(InteractionHand.MAIN_HAND, tool);
         VeinMinerPlayerSettings.setEnabled(player, true);
         VeinMinerPlayerSettings.setActivationMode(player, ActivationMode.ALWAYS);
         VeinMinerPlayerSettings.setPersonalWhitelistEnabled(player, false);
-        return player;
     }
 
     /** Puts the player's settings back to the defaults the other tests expect. */
@@ -106,6 +113,36 @@ public final class VeinMinerTestFixtures {
             }
         }
         return count;
+    }
+
+    /**
+     * Moves the world border so that {@code firstOutside} is the first block column east of it, and
+     * returns the action that puts the border back. Callers restore it before their test function
+     * returns, so the border never moves while another test runs.
+     */
+    public static Runnable moveEastBorderTo(GameTestHelper helper, BlockPos firstOutside) {
+        WorldBorder border = helper.getLevel().getWorldBorder();
+        double centerX = border.getCenterX();
+        double centerZ = border.getCenterZ();
+        double size = border.getSize();
+        BlockPos absolute = helper.absolutePos(firstOutside);
+        border.setSize(BORDER_TEST_SIZE);
+        border.setCenter(absolute.getX() - BORDER_TEST_SIZE / 2.0D, absolute.getZ() + 0.5D);
+        return () -> {
+            border.setCenter(centerX, centerZ);
+            border.setSize(size);
+        };
+    }
+
+    /** Stands in for another mod's break listener; positions are absolute. */
+    public interface BreakInterference {
+        /** Refuses the break at {@code pos}. */
+        void refuseAt(BlockPos pos);
+
+        /** Runs {@code action} when the break at {@code pos} is about to happen. */
+        void runBefore(BlockPos pos, Runnable action);
+
+        void stop();
     }
 
     /** Every server setting, so each test can put back what it changed. */
