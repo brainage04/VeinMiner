@@ -1,10 +1,12 @@
 package io.github.brainage04.vein_miner.gametest;
 
+import com.google.gson.Gson;
 import io.github.brainage04.vein_miner.config.ActivationMode;
 import io.github.brainage04.vein_miner.config.AdjacencyMode;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
-import java.util.LinkedHashSet;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -61,9 +63,9 @@ public final class VeinMinerTestFixtures {
         config.adjacencyMode = AdjacencyMode.FACES_EDGES_CORNERS;
         config.betterOreVeinMining = true;
         config.stopBeforeBreakingTool = true;
-        config.minimumRemainingDurability = 1;
-        config.durabilityCostPerBlock = 1;
-        config.exhaustionCostPerBlock = 0.005F;
+        config.minimumRemainingDurability = VeinMinerConfig.DEFAULT_MINIMUM_REMAINING_DURABILITY;
+        config.durabilityCostPerBlock = VeinMinerConfig.DEFAULT_DURABILITY_COST_PER_BLOCK;
+        config.exhaustionCostPerBlock = VeinMinerConfig.DEFAULT_EXHAUSTION_COST_PER_BLOCK;
         config.whitelist.clear();
         config.allowedTags.clear();
         config.deniedBlocks.clear();
@@ -106,67 +108,27 @@ public final class VeinMinerTestFixtures {
         return count;
     }
 
-    /** The server settings the tests change, so each test can put them back. */
+    /** Every server setting, so each test can put back what it changed. */
     public static final class ConfigSnapshot {
-        private final boolean enableVeinMining;
-        private final ActivationMode defaultActivationMode;
-        private final AdjacencyMode adjacencyMode;
-        private final int maxOreBlocks;
-        private final int maxTreeBlocks;
-        private final int maxOtherBlocks;
-        private final boolean betterOreVeinMining;
-        private final boolean betterTreeVeinMining;
-        private final boolean stopBeforeBreakingTool;
-        private final int minimumRemainingDurability;
-        private final int durabilityCostPerBlock;
-        private final float exhaustionCostPerBlock;
-        private final boolean fastLeafDecayEnabled;
-        private final int leafDecaySpeedMultiplier;
-        private final LinkedHashSet<String> whitelist;
-        private final LinkedHashSet<String> allowedTags;
-        private final LinkedHashSet<String> deniedBlocks;
-        private final LinkedHashSet<String> deniedTags;
+        private static final Gson GSON = new Gson();
+        private final String json;
 
         public ConfigSnapshot(VeinMinerConfig config) {
-            enableVeinMining = config.enableVeinMining;
-            defaultActivationMode = config.defaultActivationMode;
-            adjacencyMode = config.adjacencyMode;
-            maxOreBlocks = config.maxOreBlocks;
-            maxTreeBlocks = config.maxTreeBlocks;
-            maxOtherBlocks = config.maxOtherBlocks;
-            betterOreVeinMining = config.betterOreVeinMining;
-            betterTreeVeinMining = config.betterTreeVeinMining;
-            stopBeforeBreakingTool = config.stopBeforeBreakingTool;
-            minimumRemainingDurability = config.minimumRemainingDurability;
-            durabilityCostPerBlock = config.durabilityCostPerBlock;
-            exhaustionCostPerBlock = config.exhaustionCostPerBlock;
-            fastLeafDecayEnabled = config.fastLeafDecayEnabled;
-            leafDecaySpeedMultiplier = config.leafDecaySpeedMultiplier;
-            whitelist = new LinkedHashSet<>(config.whitelist);
-            allowedTags = new LinkedHashSet<>(config.allowedTags);
-            deniedBlocks = new LinkedHashSet<>(config.deniedBlocks);
-            deniedTags = new LinkedHashSet<>(config.deniedTags);
+            json = GSON.toJson(config);
         }
 
         public void restore(VeinMinerConfig config) {
-            config.enableVeinMining = enableVeinMining;
-            config.defaultActivationMode = defaultActivationMode;
-            config.adjacencyMode = adjacencyMode;
-            config.maxOreBlocks = maxOreBlocks;
-            config.maxTreeBlocks = maxTreeBlocks;
-            config.maxOtherBlocks = maxOtherBlocks;
-            config.betterOreVeinMining = betterOreVeinMining;
-            config.betterTreeVeinMining = betterTreeVeinMining;
-            config.stopBeforeBreakingTool = stopBeforeBreakingTool;
-            config.minimumRemainingDurability = minimumRemainingDurability;
-            config.durabilityCostPerBlock = durabilityCostPerBlock;
-            config.exhaustionCostPerBlock = exhaustionCostPerBlock;
-            config.fastLeafDecayEnabled = fastLeafDecayEnabled;
-            config.leafDecaySpeedMultiplier = leafDecaySpeedMultiplier;
-            config.whitelist = new LinkedHashSet<>(whitelist);
-            config.allowedTags = new LinkedHashSet<>(allowedTags);
-            config.deniedBlocks = new LinkedHashSet<>(deniedBlocks);
-            config.deniedTags = new LinkedHashSet<>(deniedTags);
+            VeinMinerConfig saved = GSON.fromJson(json, VeinMinerConfig.class);
+            for (Field field : VeinMinerConfig.class.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+                try {
+                    field.set(config, field.get(saved));
+                } catch (IllegalAccessException exception) {
+                    throw new AssertionError("Cannot restore config field " + field, exception);
+                }
+            }
         }
     }
 }

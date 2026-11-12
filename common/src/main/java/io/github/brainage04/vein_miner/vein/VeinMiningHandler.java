@@ -37,7 +37,7 @@ public final class VeinMiningHandler {
 
     public static float additionalBlockExhaustionCost() {
         MiningContext context = MINING_CONTEXT.get();
-        return context == null ? 0.005F : context.exhaustionCost;
+        return context == null ? 0.0F : context.exhaustionCost;
     }
 
     public static boolean beforeBlockBreak(

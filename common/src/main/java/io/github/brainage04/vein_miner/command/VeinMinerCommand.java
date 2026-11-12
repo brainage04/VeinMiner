@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import net.minecraft.SharedConstants;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -63,8 +64,11 @@ public final class VeinMinerCommand {
                     .line("/veinminer whitelist add or remove <block> - change your list")
                     .line("/veinminer whitelist list [page] or clear - show or empty your list")
                     .line("/veinminer admin - server settings, for operators");
+    private static final int GLOBAL_WHITELIST_CLEAR_SECONDS = 10;
     private static final ConfirmationWindow<UUID> GLOBAL_WHITELIST_CLEAR =
-            new ConfirmationWindow<>(10 * 20, ConfirmationWindow.Boundary.EXCLUSIVE);
+            new ConfirmationWindow<>(
+                    GLOBAL_WHITELIST_CLEAR_SECONDS * SharedConstants.TICKS_PER_SECOND,
+                    ConfirmationWindow.Boundary.EXCLUSIVE);
 
     private VeinMinerCommand() {}
 
@@ -882,7 +886,9 @@ public final class VeinMinerCommand {
         }
         return FEEDBACK.neutral(
                 source,
-                "Run this command again within 10 seconds to clear the global explicit-block whitelist.");
+                "Run this command again within "
+                        + GLOBAL_WHITELIST_CLEAR_SECONDS
+                        + " seconds to clear the global explicit-block whitelist.");
     }
 
     private static int listSelection(

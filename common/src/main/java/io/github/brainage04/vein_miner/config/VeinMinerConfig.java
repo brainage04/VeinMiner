@@ -16,6 +16,9 @@ public final class VeinMinerConfig {
     public static final int DEFAULT_MAX_TREE_BLOCKS = 256;
     public static final int DEFAULT_MAX_OTHER_BLOCKS = 64;
     public static final int DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER = 100;
+    public static final int DEFAULT_MINIMUM_REMAINING_DURABILITY = 1;
+    public static final int DEFAULT_DURABILITY_COST_PER_BLOCK = 1;
+    public static final float DEFAULT_EXHAUSTION_COST_PER_BLOCK = 0.005F;
     public static final int MAX_BLOCKS_PER_VEIN = 4096;
     public static final int MAX_LEAF_DECAY_SPEED_MULTIPLIER = 1000;
     public static final int MAX_DURABILITY_COST = 64;
@@ -34,9 +37,9 @@ public final class VeinMinerConfig {
     public boolean betterOreVeinMining = true;
     public boolean betterTreeVeinMining = true;
     public boolean stopBeforeBreakingTool = true;
-    public int minimumRemainingDurability = 1;
-    public int durabilityCostPerBlock = 1;
-    public float exhaustionCostPerBlock = 0.005F;
+    public int minimumRemainingDurability = DEFAULT_MINIMUM_REMAINING_DURABILITY;
+    public int durabilityCostPerBlock = DEFAULT_DURABILITY_COST_PER_BLOCK;
+    public float exhaustionCostPerBlock = DEFAULT_EXHAUSTION_COST_PER_BLOCK;
     public boolean fastLeafDecayEnabled = true;
     public int leafDecaySpeedMultiplier = DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER;
     public LinkedHashSet<String> whitelist = new LinkedHashSet<>();
@@ -88,7 +91,7 @@ public final class VeinMinerConfig {
                         durabilityCostPerBlock,
                         0,
                         MAX_DURABILITY_COST,
-                        1,
+                        DEFAULT_DURABILITY_COST_PER_BLOCK,
                         corrections);
         minimumRemainingDurability =
                 clamp(
@@ -96,16 +99,18 @@ public final class VeinMinerConfig {
                         minimumRemainingDurability,
                         0,
                         MAX_BLOCKS_PER_VEIN,
-                        1,
+                        DEFAULT_MINIMUM_REMAINING_DURABILITY,
                         corrections);
         if (!Float.isFinite(exhaustionCostPerBlock)
                 || exhaustionCostPerBlock < 0.0F
                 || exhaustionCostPerBlock > MAX_EXHAUSTION_COST) {
             corrections.add(
-                    "exhaustionCostPerBlock reset to 0.005 (allowed range: 0.0-"
+                    "exhaustionCostPerBlock reset to "
+                            + DEFAULT_EXHAUSTION_COST_PER_BLOCK
+                            + " (allowed range: 0.0-"
                             + MAX_EXHAUSTION_COST
                             + ")");
-            exhaustionCostPerBlock = 0.005F;
+            exhaustionCostPerBlock = DEFAULT_EXHAUSTION_COST_PER_BLOCK;
         }
         if (defaultActivationMode == null) {
             defaultActivationMode = ActivationMode.WHILE_SNEAKING;
