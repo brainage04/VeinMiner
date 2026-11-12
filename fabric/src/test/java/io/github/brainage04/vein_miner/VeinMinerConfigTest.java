@@ -44,7 +44,7 @@ class VeinMinerConfigTest {
         assertEquals(
                 List.of("vein_miner:ores", "vein_miner:trees"),
                 config.allowedTags.stream().toList());
-        assertEquals(List.of("minecraft:diamond_ore"), config.whitelistAsSortedList());
+        assertEquals(List.of("minecraft:diamond_ore"), config.whitelist.stream().toList());
     }
 
     @Test

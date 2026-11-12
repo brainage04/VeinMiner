@@ -134,22 +134,6 @@ public final class VeinMinerConfig {
         return matchesId(state, whitelist) || matchesAnyTag(state, allowedTags);
     }
 
-    public boolean addBlockToWhitelist(Block block) {
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey()
-                && whitelist.add(blockId.toString());
-    }
-
-    public boolean removeBlockFromWhitelist(Block block) {
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey()
-                && whitelist.remove(blockId.toString());
-    }
-
-    public List<String> whitelistAsSortedList() {
-        return sorted(whitelist);
-    }
-
     public BlockCategory category(BlockState state) {
         if (state.is(ORE_CATEGORY_TAG)) {
             return BlockCategory.ORE;
@@ -246,11 +230,5 @@ public final class VeinMinerConfig {
             }
         }
         return normalized;
-    }
-
-    private static List<String> sorted(LinkedHashSet<String> values) {
-        List<String> sorted = new ArrayList<>(values);
-        sorted.sort(String::compareTo);
-        return sorted;
     }
 }

@@ -19,11 +19,6 @@ public final class VeinMinerFabric implements ModInitializer, ServerPlatform {
     }
 
     @Override
-    public String loaderName() {
-        return "Fabric";
-    }
-
-    @Override
     public Path configDirectory() {
         return FabricLoader.getInstance().getConfigDir();
     }

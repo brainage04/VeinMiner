@@ -22,11 +22,6 @@ public final class VeinMinerNeoForge implements ServerPlatform {
     }
 
     @Override
-    public String loaderName() {
-        return "NeoForge";
-    }
-
-    @Override
     public Path configDirectory() {
         return FMLPaths.CONFIGDIR.get();
     }
