@@ -14,6 +14,7 @@ Mining is enabled server-wide by default. Each player also has a persistent pers
 - Better ore mining joins matching normal and deepslate ore variants. Better tree mining joins logs, wood, stems, and hyphae from the same wood family, including stripped variants.
 - Extra blocks use configurable durability and exhaustion costs. Tool protection stops traversal before an extra block would cross the configured remaining-durability floor.
 - A vein skips blocks the player may not touch, such as blocks under spawn protection or beyond the world border, and blocks in or next to chunks that are not loaded.
+- Other mods, such as claim mods, are asked about every extra block through the break events: Fabric's `PlayerBlockBreakEvents.BEFORE` and NeoForge's `BreakBlockEvent`. Hooks that fire only when a player starts digging are not asked again: Fabric's `AttackBlockCallback` and NeoForge's `PlayerInteractEvent.LeftClickBlock`.
 - Leaves are never vein-mined, even when a selection allows them.
 - Fast leaf decay has its own enable switch and multiplier, independent of connected tree mining.
 
