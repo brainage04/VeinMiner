@@ -87,6 +87,7 @@ public final class VeinMiningHandler {
 
     private static void mineConnectedBlocks(PendingVein pending) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        VeinMinerConfig.Selection selection = config.selection();
         BlockCategory category = config.category(pending.originState);
         int maxBlocks = config.maxBlocks(category);
         if (maxBlocks <= 1) {
@@ -129,7 +130,7 @@ public final class VeinMiningHandler {
                             continue;
                         }
                         BlockState neighborState = pending.level.getBlockState(neighborPos);
-                        if (!config.isBlockWhitelisted(neighborState)
+                        if (!selection.allows(neighborState)
                                 || !VeinMinerPlayerSettings.allowsBlock(
                                         pending.player, neighborState)
                                 || !isEquivalentTarget(
@@ -156,7 +157,7 @@ public final class VeinMiningHandler {
                 }
                 BlockState targetState = pending.level.getBlockState(targetPos);
                 ItemStack currentTool = pending.player.getMainHandItem();
-                if (!config.isBlockWhitelisted(targetState)
+                if (!selection.allows(targetState)
                         || !VeinMinerPlayerSettings.allowsBlock(pending.player, targetState)
                         || !isEquivalentTarget(pending.originState, targetState, category, config)
                         || currentTool.isEmpty()

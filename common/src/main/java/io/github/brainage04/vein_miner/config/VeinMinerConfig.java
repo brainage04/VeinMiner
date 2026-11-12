@@ -4,6 +4,7 @@ import io.github.brainage04.vein_miner.VeinMiner;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -133,10 +134,13 @@ public final class VeinMinerConfig {
     }
 
     public boolean isBlockWhitelisted(BlockState state) {
-        if (matchesId(state, deniedBlocks) || matchesAnyTag(state, deniedTags)) {
-            return false;
-        }
-        return matchesId(state, whitelist) || matchesAnyTag(state, allowedTags);
+        return selection().allows(state);
+    }
+
+    /** The block and tag selection with its tag ids parsed, for checking many blocks at once. */
+    public Selection selection() {
+        return new Selection(
+                whitelist, deniedBlocks, parseTags(allowedTags), parseTags(deniedTags));
     }
 
     public BlockCategory category(BlockState state) {
@@ -168,20 +172,43 @@ public final class VeinMinerConfig {
         OTHER
     }
 
-    private static boolean matchesId(BlockState state, LinkedHashSet<String> ids) {
+    public record Selection(
+            Set<String> allowedBlocks,
+            Set<String> deniedBlocks,
+            List<TagKey<Block>> allowedTags,
+            List<TagKey<Block>> deniedTags) {
+        public boolean allows(BlockState state) {
+            if (matchesId(state, deniedBlocks) || matchesAnyTag(state, deniedTags)) {
+                return false;
+            }
+            return matchesId(state, allowedBlocks) || matchesAnyTag(state, allowedTags);
+        }
+    }
+
+    private static boolean matchesId(BlockState state, Set<String> ids) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
         return blockId != BuiltInRegistries.BLOCK.getDefaultKey()
                 && ids.contains(blockId.toString());
     }
 
-    private static boolean matchesAnyTag(BlockState state, LinkedHashSet<String> tags) {
-        for (String tagId : tags) {
-            TagKey<Block> tag = parseBlockTag(tagId);
-            if (tag != null && state.is(tag)) {
+    private static boolean matchesAnyTag(BlockState state, List<TagKey<Block>> tags) {
+        for (TagKey<Block> tag : tags) {
+            if (state.is(tag)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static List<TagKey<Block>> parseTags(Set<String> tagIds) {
+        List<TagKey<Block>> tags = new ArrayList<>(tagIds.size());
+        for (String tagId : tagIds) {
+            TagKey<Block> tag = parseBlockTag(tagId);
+            if (tag != null) {
+                tags.add(tag);
+            }
+        }
+        return tags;
     }
 
     private static LinkedHashSet<String> defaultAllowedTags() {
