@@ -14,7 +14,7 @@ jobs:
       contents: write
     uses: brainage04/MinecraftModConventions/.github/workflows/reusable-multiloader-release.yml@v3.4.0
     with:
-      prepare_siblings: BrainageLib@d783aa0a761aa6523fbf3ed291d7b5ca288fbffc
+      prepare_siblings: ${{ vars.PREPARE_SIBLINGS }}
       additional_artifact_pattern: vein_miner-neoforge-*.jar
       release_name: ${{ format('Vein Miner {0}', github.ref_name) }}
       modrinth_project_id: ${{ vars.MODRINTH_PROJECT_ID }}
