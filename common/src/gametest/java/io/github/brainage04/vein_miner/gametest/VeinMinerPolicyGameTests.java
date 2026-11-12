@@ -244,6 +244,8 @@ public final class VeinMinerPolicyGameTests {
             helper.setBlock(ORIGIN, Blocks.DIAMOND_ORE);
             helper.setBlock(ORIGIN.east(), Blocks.DIAMOND_ORE);
             int previousStat = player.getStats().getValue(Stats.BLOCK_MINED, Blocks.DIAMOND_ORE);
+            int previousToolUses =
+                    player.getStats().getValue(Stats.ITEM_USED, Items.DIAMOND_PICKAXE);
             float previousSaturation = player.getFoodData().getSaturationLevel();
 
             destroyOrigin(helper, player);
@@ -256,6 +258,11 @@ public final class VeinMinerPolicyGameTests {
                 throw new AssertionError(
                         "Expected two diamond-ore mining statistics, found " + minedBlocks + ".");
             }
+            int toolUses =
+                    player.getStats().getValue(Stats.ITEM_USED, Items.DIAMOND_PICKAXE)
+                            - previousToolUses;
+            helper.assertTrue(
+                    toolUses == 2, "Expected two diamond-pickaxe uses, found " + toolUses);
             int toolDamage = player.getMainHandItem().getDamageValue();
             if (toolDamage != 4) {
                 throw new AssertionError(
