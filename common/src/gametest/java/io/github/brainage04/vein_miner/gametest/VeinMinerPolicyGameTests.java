@@ -24,10 +24,16 @@ import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -45,6 +51,10 @@ import net.minecraft.world.phys.AABB;
 /** Server selection, limits, costs and settings storage, registered by both loaders. */
 public final class VeinMinerPolicyGameTests {
     private static final int FAR_CHUNK_OFFSET = 1000;
+    private static final int CHUNK_CASE_SPACING = 8;
+    // Loads its chunk and expires on its own 20 ticks later (TicketType.java:17), so a failed
+    // case cannot keep chunks loaded.
+    private static final TicketType CHUNK_CASE_TICKET = TicketType.PLAYER_SPAWN;
 
     private VeinMinerPolicyGameTests() {}
 
@@ -181,57 +191,120 @@ public final class VeinMinerPolicyGameTests {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         ConfigSnapshot snapshot = new ConfigSnapshot(config);
         ServerPlayer player = createPlayer(helper, Items.DIAMOND_PICKAXE);
-        ServerLevel level = helper.getLevel();
-        // Far from every test structure. A forced chunk's ticket level grows by one per chunk
-        // (ChunkMap.java:126, ChunkTracker.java:64-66), so the chunks one and two east of it are
-        // loaded and the third is not (ChunkLevel.java:38-45, ServerChunkCache.java:258-261).
         ChunkPos testChunk = ChunkPos.containing(helper.absolutePos(ORIGIN));
-        ChunkPos forced = new ChunkPos(testChunk.x() + FAR_CHUNK_OFFSET, testChunk.z());
-        ChunkPos inner = new ChunkPos(forced.x() + 1, forced.z());
-        ChunkPos outer = new ChunkPos(forced.x() + 2, forced.z());
-        int y = helper.absolutePos(ORIGIN).getY();
-        int z = inner.getMiddleBlockZ();
-        BlockPos origin = new BlockPos(inner.getMaxBlockX() - 1, y, z);
-        BlockPos innerEdge = origin.east();
-        BlockPos outerWest = new BlockPos(outer.getMinBlockX(), y, z);
-        BlockPos outerEast = new BlockPos(outer.getMaxBlockX(), y, z);
-        BlockPos beyond = outerEast.east();
-        int quietFlags = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
         try {
-            level.setChunkForced(forced.x(), forced.z(), true);
             configureOreMining(config, 32);
-            for (int x = origin.getX(); x <= outerEast.getX(); x++) {
-                level.setBlock(
-                        new BlockPos(x, y, z), Blocks.DIAMOND_ORE.defaultBlockState(), quietFlags);
-            }
-            helper.assertFalse(
-                    level.isLoaded(beyond), "The chunk east of the vein must start unloaded.");
-
-            helper.assertTrue(
-                    player.gameMode.destroyBlock(origin), "Expected the origin to be destroyed.");
-
-            helper.assertFalse(
-                    level.isLoaded(beyond), "The vein loaded the chunk east of the vein.");
-            helper.assertTrue(
-                    level.getBlockState(innerEdge).isAir(),
-                    "Expected the vein to mine a chunk whose neighbours are all loaded.");
-            helper.assertTrue(
-                    level.getBlockState(outerWest).is(Blocks.DIAMOND_ORE)
-                            && level.getBlockState(outerEast).is(Blocks.DIAMOND_ORE),
-                    "Expected the vein to stop at a chunk next to an unloaded chunk.");
+            assertVeinStopsBeforeChunk(
+                    helper, player, testChunk, 0, Direction.EAST, new ChunkPos(2, 0), false);
+            assertVeinStopsBeforeChunk(
+                    helper, player, testChunk, 1, Direction.SOUTH, new ChunkPos(0, 2), false);
+            assertVeinStopsBeforeChunk(
+                    helper, player, testChunk, 2, Direction.EAST, new ChunkPos(2, -1), false);
+            assertVeinStopsBeforeChunk(
+                    helper, player, testChunk, 3, Direction.EAST, new ChunkPos(2, 0), true);
         } finally {
-            for (int x = origin.getX(); x <= outerEast.getX(); x++) {
-                level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), quietFlags);
-            }
-            AABB vein = AABB.encapsulatingFullBlocks(origin, outerEast).inflate(3.0D);
-            for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, vein)) {
-                item.discard();
-            }
-            level.setChunkForced(forced.x(), forced.z(), false);
             snapshot.restore(config);
             resetPlayer(player);
         }
         helper.succeed();
+    }
+
+    /**
+     * Loads, far from every test structure, a base chunk, the next chunk along {@code direction}
+     * and every chunk around the two, except {@code missing} (relative to the base). With {@code
+     * loading}, {@code missing} then gets a ticket and starts loading, which finishes only when the
+     * server thread next runs its tasks. A vein along {@code direction} from the base must mine the
+     * base, leave every block of the next chunk and leave {@code missing} unloaded.
+     */
+    private static void assertVeinStopsBeforeChunk(
+            GameTestHelper helper,
+            ServerPlayer player,
+            ChunkPos testChunk,
+            int caseIndex,
+            Direction direction,
+            ChunkPos missing,
+            boolean loading) {
+        ServerLevel level = helper.getLevel();
+        ServerChunkCache chunks = level.getChunkSource();
+        ChunkPos base =
+                new ChunkPos(
+                        testChunk.x() + FAR_CHUNK_OFFSET,
+                        testChunk.z() + caseIndex * CHUNK_CASE_SPACING);
+        ChunkPos next =
+                new ChunkPos(base.x() + direction.getStepX(), base.z() + direction.getStepZ());
+        ChunkPos missingChunk = new ChunkPos(base.x() + missing.x(), base.z() + missing.z());
+        List<ChunkPos> ticketed = new ArrayList<>();
+        for (int dx = -1; dx <= 2; dx++) {
+            for (int dz = -1; dz <= 2; dz++) {
+                ChunkPos chunk = new ChunkPos(base.x() + dx, base.z() + dz);
+                if (!chunk.equals(missingChunk)
+                        && (chunk.getChessboardDistance(base) <= 1
+                                || chunk.getChessboardDistance(next) <= 1)) {
+                    ticketed.add(chunk);
+                }
+            }
+        }
+        String name = "Case " + caseIndex + " (" + direction + ", missing " + missing + "): ";
+        // The base's last two blocks along the vein, then every block of the next chunk.
+        int y = helper.absolutePos(ORIGIN).getY();
+        BlockPos origin =
+                base.getMiddleBlockPosition(y)
+                        .relative(direction, SectionPos.SECTION_HALF_SIZE - 2);
+        int veinLength = 2 + SectionPos.SECTION_SIZE;
+        int quietFlags = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
+        try {
+            for (ChunkPos chunk : ticketed) {
+                chunks.addTicketWithRadius(CHUNK_CASE_TICKET, chunk, 0);
+                level.getChunk(chunk.x(), chunk.z());
+            }
+            for (int i = 0; i < veinLength; i++) {
+                level.setBlock(
+                        origin.relative(direction, i),
+                        Blocks.DIAMOND_ORE.defaultBlockState(),
+                        quietFlags);
+            }
+            if (loading) {
+                chunks.addTicketAndLoadWithRadius(CHUNK_CASE_TICKET, missingChunk, 0);
+                helper.assertTrue(
+                        level.hasChunk(missingChunk.x(), missingChunk.z()),
+                        name + "the missing chunk must have a ticket.");
+            }
+            helper.assertTrue(
+                    chunks.getChunkNow(missingChunk.x(), missingChunk.z()) == null,
+                    name + "the missing chunk must start unloaded.");
+
+            helper.assertTrue(
+                    player.gameMode.destroyBlock(origin), name + "expected the origin to break.");
+
+            helper.assertTrue(
+                    chunks.getChunkNow(missingChunk.x(), missingChunk.z()) == null,
+                    name + "the vein loaded the missing chunk.");
+            helper.assertTrue(
+                    level.getBlockState(origin.relative(direction)).isAir(),
+                    name + "expected the vein to mine the base chunk.");
+            for (int i = 2; i < veinLength; i++) {
+                helper.assertTrue(
+                        level.getBlockState(origin.relative(direction, i)).is(Blocks.DIAMOND_ORE),
+                        name + "expected the vein to leave the next chunk.");
+            }
+        } finally {
+            for (int i = 0; i < veinLength; i++) {
+                level.setBlock(
+                        origin.relative(direction, i), Blocks.AIR.defaultBlockState(), quietFlags);
+            }
+            AABB vein =
+                    AABB.encapsulatingFullBlocks(origin, origin.relative(direction, veinLength))
+                            .inflate(3.0D);
+            for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, vein)) {
+                item.discard();
+            }
+            for (ChunkPos chunk : ticketed) {
+                chunks.removeTicketWithRadius(CHUNK_CASE_TICKET, chunk, 0);
+            }
+            if (loading) {
+                chunks.removeTicketWithRadius(CHUNK_CASE_TICKET, missingChunk, 0);
+            }
+        }
     }
 
     public static void additionalBlocksUseConfiguredCostsAndAwardMiningStats(

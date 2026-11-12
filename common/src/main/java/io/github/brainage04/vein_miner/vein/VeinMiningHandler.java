@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -182,14 +183,16 @@ public final class VeinMiningHandler {
     }
 
     /**
-     * Whether the chunk holding {@code pos} and the eight chunks around it are loaded. Reading a
-     * block in a chunk that is not loaded loads or generates it on the server thread
-     * (Level.java:353-360). Breaking a block reads its neighbours (Level.java:245,254,
-     * NeighborUpdater.java:45), and a neighbour that changes shape reads its own neighbours and
-     * updates them in turn (RedstoneWireBlock.java:181-185, NeighborUpdater.java:48-49), so the
-     * reads have no fixed reach. Vanilla runs scheduled block and fluid ticks only in chunks whose
-     * eight neighbours are loaded (ServerLevel.java:209-210, ServerChunkCache.java:291-297,
-     * ChunkMap.java:676-677); the vein keeps to the same chunks.
+     * Whether the chunk holding {@code pos} and the eight chunks around it are all loaded as full
+     * chunks right now: {@code getChunkNow} returns a chunk only when it is present at FULL and its
+     * ticket still allows FULL (ServerChunkCache.java:175-203, GenerationChunkHolder.java:260-262).
+     * A chunk with a ticket that is still loading or generating does not count. Reading a block in
+     * a chunk that is not loaded blocks the server thread until the chunk is loaded or generated
+     * (Level.java:353-360, ServerChunkCache.java:162-163). Breaking a block reads its six
+     * neighbours (Level.java:245,254, NeighborUpdater.java:45), which lie in these nine chunks. A
+     * neighbour that changes shape reads its own neighbours and updates them in turn
+     * (RedstoneWireBlock.java:181-185, NeighborUpdater.java:48-49), so those further reads have no
+     * fixed reach and are not covered.
      */
     private static boolean isAreaLoaded(
             ServerLevel level, BlockPos pos, Long2BooleanOpenHashMap cache) {
@@ -199,10 +202,11 @@ public final class VeinMiningHandler {
         if (cache.containsKey(key)) {
             return cache.get(key);
         }
+        ServerChunkCache chunks = level.getChunkSource();
         boolean loaded = true;
         for (int dx = -1; dx <= 1 && loaded; dx++) {
             for (int dz = -1; dz <= 1 && loaded; dz++) {
-                loaded = level.hasChunk(chunkX + dx, chunkZ + dz);
+                loaded = chunks.getChunkNow(chunkX + dx, chunkZ + dz) != null;
             }
         }
         cache.put(key, loaded);
