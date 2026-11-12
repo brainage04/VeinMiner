@@ -21,7 +21,7 @@ Vanilla loot tables, block entities, mining statistics, and tool checks are pres
 
 - Minecraft 26.3
 - Fabric Loader 0.19.5 or newer with Fabric API, or NeoForge 26.3.0.99 or newer
-- BrainageLib 1.3.0 or newer
+- BrainageLib 2.0.0 or newer
 - Java 25 or newer
 - Install Vein Miner and BrainageLib on the server.
 

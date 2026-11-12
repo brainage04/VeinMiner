@@ -24,13 +24,13 @@ jobs:
   build:
     uses: brainage04/MinecraftModConventions/.github/workflows/reusable-mod-build.yml@v3.4.0
     with:
-      prepare_siblings: BrainageLib
+      prepare_siblings: BrainageLib@36ff1cedcf2cd881ec47541d0a6dc20eb583afa4
 
   client-gametests:
     if: ${{ vars.RUN_CLIENT_GAMETESTS != 'false' && (github.event_name != 'workflow_dispatch' || inputs.run_client_gametests || inputs.record_client_gametests) }}
     uses: brainage04/MinecraftModConventions/.github/workflows/reusable-client-gametests.yml@v3.4.0
     with:
-      prepare_siblings: BrainageLib
+      prepare_siblings: BrainageLib@36ff1cedcf2cd881ec47541d0a6dc20eb583afa4
       run_client_gametests: ${{ github.event_name != 'workflow_dispatch' || inputs.run_client_gametests }}
       client_gametest_profile: smoke
       record_client_gametests: ${{ github.event_name == 'workflow_dispatch' && inputs.record_client_gametests }}
@@ -38,4 +38,4 @@ jobs:
   production-gametests:
     uses: brainage04/MinecraftModConventions/.github/workflows/reusable-production-gametests.yml@v3.4.0
     with:
-      prepare_siblings: BrainageLib
+      prepare_siblings: BrainageLib@36ff1cedcf2cd881ec47541d0a6dc20eb583afa4
