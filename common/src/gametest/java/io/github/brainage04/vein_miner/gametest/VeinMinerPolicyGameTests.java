@@ -24,7 +24,6 @@ import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
@@ -183,28 +182,27 @@ public final class VeinMinerPolicyGameTests {
         ConfigSnapshot snapshot = new ConfigSnapshot(config);
         ServerPlayer player = createPlayer(helper, Items.DIAMOND_PICKAXE);
         ServerLevel level = helper.getLevel();
-        // Far from every test structure, so writing the vein loads its chunk and none east of it.
+        // Far from every test structure. A forced chunk's ticket level grows by one per chunk
+        // (ChunkMap.java:126, ChunkTracker.java:64-66), so the chunks one and two east of it are
+        // loaded and the third is not (ChunkLevel.java:38-45, ServerChunkCache.java:258-261).
         ChunkPos testChunk = ChunkPos.containing(helper.absolutePos(ORIGIN));
-        ChunkPos chunk = new ChunkPos(testChunk.x() + FAR_CHUNK_OFFSET, testChunk.z());
-        BlockPos edge =
-                new BlockPos(
-                        chunk.getMaxBlockX(),
-                        helper.absolutePos(ORIGIN).getY(),
-                        chunk.getMiddleBlockZ());
-        BlockPos middle = edge.west();
-        BlockPos origin = middle.west();
-        BlockPos beyond = edge.east();
-        // Neighbour and shape updates around the edge block would read, and so load, the chunk
-        // east of it.
+        ChunkPos forced = new ChunkPos(testChunk.x() + FAR_CHUNK_OFFSET, testChunk.z());
+        ChunkPos inner = new ChunkPos(forced.x() + 1, forced.z());
+        ChunkPos outer = new ChunkPos(forced.x() + 2, forced.z());
+        int y = helper.absolutePos(ORIGIN).getY();
+        int z = inner.getMiddleBlockZ();
+        BlockPos origin = new BlockPos(inner.getMaxBlockX() - 1, y, z);
+        BlockPos innerEdge = origin.east();
+        BlockPos outerWest = new BlockPos(outer.getMinBlockX(), y, z);
+        BlockPos outerEast = new BlockPos(outer.getMaxBlockX(), y, z);
+        BlockPos beyond = outerEast.east();
         int quietFlags = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
         try {
-            configureOreMining(config, 8);
-            // Breaking the edge block would update its neighbours in the next chunk, so tool
-            // protection lets the vein mine the middle block and stops before the edge.
-            ItemStack tool = player.getMainHandItem();
-            tool.setDamageValue(tool.getMaxDamage() - 3);
-            for (BlockPos pos : List.of(origin, middle, edge)) {
-                level.setBlock(pos, Blocks.DIAMOND_ORE.defaultBlockState(), quietFlags);
+            level.setChunkForced(forced.x(), forced.z(), true);
+            configureOreMining(config, 32);
+            for (int x = origin.getX(); x <= outerEast.getX(); x++) {
+                level.setBlock(
+                        new BlockPos(x, y, z), Blocks.DIAMOND_ORE.defaultBlockState(), quietFlags);
             }
             helper.assertFalse(
                     level.isLoaded(beyond), "The chunk east of the vein must start unloaded.");
@@ -212,19 +210,24 @@ public final class VeinMinerPolicyGameTests {
             helper.assertTrue(
                     player.gameMode.destroyBlock(origin), "Expected the origin to be destroyed.");
 
-            helper.assertTrue(
-                    level.getBlockState(middle).isAir(), "Expected the vein to mine its middle.");
-            helper.assertTrue(
-                    level.getBlockState(edge).is(Blocks.DIAMOND_ORE),
-                    "Expected tool protection to keep the edge block.");
             helper.assertFalse(
-                    level.isLoaded(beyond), "The vein search loaded the chunk east of the vein.");
+                    level.isLoaded(beyond), "The vein loaded the chunk east of the vein.");
+            helper.assertTrue(
+                    level.getBlockState(innerEdge).isAir(),
+                    "Expected the vein to mine a chunk whose neighbours are all loaded.");
+            helper.assertTrue(
+                    level.getBlockState(outerWest).is(Blocks.DIAMOND_ORE)
+                            && level.getBlockState(outerEast).is(Blocks.DIAMOND_ORE),
+                    "Expected the vein to stop at a chunk next to an unloaded chunk.");
         } finally {
-            level.setBlock(edge, Blocks.AIR.defaultBlockState(), quietFlags);
-            for (ItemEntity item :
-                    level.getEntitiesOfClass(ItemEntity.class, new AABB(origin).inflate(3.0D))) {
+            for (int x = origin.getX(); x <= outerEast.getX(); x++) {
+                level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), quietFlags);
+            }
+            AABB vein = AABB.encapsulatingFullBlocks(origin, outerEast).inflate(3.0D);
+            for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, vein)) {
                 item.discard();
             }
+            level.setChunkForced(forced.x(), forced.z(), false);
             snapshot.restore(config);
             resetPlayer(player);
         }

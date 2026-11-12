@@ -4,16 +4,19 @@ import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig.BlockCategory;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
+import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -99,6 +102,7 @@ public final class VeinMiningHandler {
                 new LongOpenHashSet(
                         Math.min(maxBlocks * 2, VeinMinerConfig.MAX_BLOCKS_PER_VEIN * 2));
         LongArrayList connected = new LongArrayList(Math.min(maxBlocks - 1, 128));
+        Long2BooleanOpenHashMap loadedAreas = new Long2BooleanOpenHashMap();
         long origin = pending.originPos.asLong();
         queue.enqueue(origin);
         visited.add(origin);
@@ -123,9 +127,7 @@ public final class VeinMiningHandler {
                         }
 
                         BlockPos neighborPos = BlockPos.of(neighbor);
-                        // Reading a block in a chunk that is not loaded loads or generates it on
-                        // the server thread (Level.java:353-360).
-                        if (!pending.level.isLoaded(neighborPos)
+                        if (!isAreaLoaded(pending.level, neighborPos, loadedAreas)
                                 || !pending.player.mayInteract(pending.level, neighborPos)) {
                             continue;
                         }
@@ -177,6 +179,34 @@ public final class VeinMiningHandler {
             MINING_CONTEXT.remove();
             miningVein = false;
         }
+    }
+
+    /**
+     * Whether the chunk holding {@code pos} and the eight chunks around it are loaded. Reading a
+     * block in a chunk that is not loaded loads or generates it on the server thread
+     * (Level.java:353-360). Breaking a block reads its neighbours (Level.java:245,254,
+     * NeighborUpdater.java:45), and a neighbour that changes shape reads its own neighbours and
+     * updates them in turn (RedstoneWireBlock.java:181-185, NeighborUpdater.java:48-49), so the
+     * reads have no fixed reach. Vanilla runs scheduled block and fluid ticks only in chunks whose
+     * eight neighbours are loaded (ServerLevel.java:209-210, ServerChunkCache.java:291-297,
+     * ChunkMap.java:676-677); the vein keeps to the same chunks.
+     */
+    private static boolean isAreaLoaded(
+            ServerLevel level, BlockPos pos, Long2BooleanOpenHashMap cache) {
+        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
+        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
+        long key = ChunkPos.pack(chunkX, chunkZ);
+        if (cache.containsKey(key)) {
+            return cache.get(key);
+        }
+        boolean loaded = true;
+        for (int dx = -1; dx <= 1 && loaded; dx++) {
+            for (int dz = -1; dz <= 1 && loaded; dz++) {
+                loaded = level.hasChunk(chunkX + dx, chunkZ + dz);
+            }
+        }
+        cache.put(key, loaded);
+        return loaded;
     }
 
     private static boolean canAffordAdditionalBlock(ItemStack tool, VeinMinerConfig config) {
