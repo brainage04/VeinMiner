@@ -31,6 +31,7 @@ Vanilla loot tables, block entities, mining statistics, and tool checks are pres
 
 `/veinminer` shows the effective global and personal state plus relevant help.
 
+- `/veinminer help`
 - `/veinminer toggle`
 - `/veinminer enable`
 - `/veinminer disable`

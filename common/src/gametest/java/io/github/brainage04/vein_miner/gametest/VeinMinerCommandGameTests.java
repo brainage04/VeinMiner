@@ -32,6 +32,8 @@ public final class VeinMinerCommandGameTests {
             run(dispatcher, source, TAGS + "deny add minecraft:logs");
             assertSelection(List.of("c:ores", "minecraft:planks"), config.allowedTags, "allowed");
             assertSelection(List.of("minecraft:logs"), config.deniedTags, "denied");
+            run(dispatcher, source, TAGS + "allow list");
+            run(dispatcher, source, TAGS + "deny list 1");
 
             List<String> removable = suggestions(dispatcher, source, TAGS + "allow remove ");
             assertTrue(
