@@ -96,7 +96,7 @@ Persistent player preferences are stored per world in `<world>/vein-miner-player
 
 If either file cannot be read (malformed JSON, or a player file with another `schemaVersion`), Vein Miner leaves it untouched: changes made with commands apply until the server stops and the command says they could not be saved. Fix the file and restart the server. For `vein_miner.json`, `/veinminer admin reload` also works. `vein_miner.json` has no version number: one written by a newer Vein Miner loads, and the settings this version does not know are dropped the next time a command saves the file.
 
-A `vein_miner.json` from Vein Miner 1.0.1 or earlier is converted on load. Its `veinSize` becomes all three category limits. Its `whitelist` stays the complete list of blocks to vein-mine, with no tags allowed, unless it is still 1.0.1's default list, which gets the default tags as well.
+A `vein_miner.json` from Vein Miner 1.0.1 or earlier, recognised by its `veinSize`, is converted on load. Its `veinSize` becomes all three category limits. Its `whitelist` stays the complete list of blocks to vein-mine, with no tags allowed, unless it is still 1.0.1's default list, which gets the default tags as well.
 
 ## Compatibility
 

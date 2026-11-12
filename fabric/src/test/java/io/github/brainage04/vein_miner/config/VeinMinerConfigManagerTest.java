@@ -159,6 +159,17 @@ class VeinMinerConfigManagerTest {
     }
 
     @Test
+    void whitelistWithoutVeinSizeIsNotTreatedAsLegacy() throws IOException {
+        Path path = directory.resolve("vein_miner.json");
+        Files.writeString(path, "{\"whitelist\":[\"minecraft:diamond_ore\"]}");
+
+        VeinMinerConfigManager.initialize(directory);
+        assertEquals(
+                List.copyOf(VeinMinerConfig.createDefault().allowedTags),
+                List.copyOf(VeinMinerConfigManager.getConfig().allowedTags));
+    }
+
+    @Test
     void configWithAllowedTagsKeepsThem() throws IOException {
         Path path = directory.resolve("vein_miner.json");
         Files.writeString(

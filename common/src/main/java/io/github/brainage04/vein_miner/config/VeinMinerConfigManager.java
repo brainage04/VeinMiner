@@ -131,10 +131,13 @@ public final class VeinMinerConfigManager {
     /**
      * Up to 1.0.1 the whitelist was the complete list of blocks to vein mine, and the file had no
      * allowedTags. A whitelist other than 1.0.1's default stays the complete list; the default one
-     * gets the default tags, which include all of its blocks.
+     * gets the default tags, which include all of its blocks. Every file 1.0.1 wrote has veinSize
+     * (v1.0.1 VeinMinerConfig.java:15 is a primitive field that Gson always writes), so a file
+     * without it was written by hand for a later version.
      */
     static boolean migrateLegacyWhitelist(JsonObject document, VeinMinerConfig loadedConfig) {
-        if (!document.has("whitelist")
+        if (!document.has("veinSize")
+                || !document.has("whitelist")
                 || document.has("allowedTags")
                 || hasCategoryLimits(document)
                 || LEGACY_DEFAULT_WHITELIST.equals(loadedConfig.whitelist)) {
