@@ -1,6 +1,10 @@
 package io.github.brainage04.vein_miner.config;
 
 import io.github.brainage04.vein_miner.VeinMiner;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -8,15 +12,14 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-
 public final class VeinMinerConfig {
     public static final int DEFAULT_MAX_ORE_BLOCKS = 128;
     public static final int DEFAULT_MAX_TREE_BLOCKS = 256;
     public static final int DEFAULT_MAX_OTHER_BLOCKS = 64;
     public static final int DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER = 100;
+    public static final int DEFAULT_MINIMUM_REMAINING_DURABILITY = 1;
+    public static final int DEFAULT_DURABILITY_COST_PER_BLOCK = 1;
+    public static final float DEFAULT_EXHAUSTION_COST_PER_BLOCK = 0.005F;
     public static final int MAX_BLOCKS_PER_VEIN = 4096;
     public static final int MAX_LEAF_DECAY_SPEED_MULTIPLIER = 1000;
     public static final int MAX_DURABILITY_COST = 64;
@@ -35,9 +38,9 @@ public final class VeinMinerConfig {
     public boolean betterOreVeinMining = true;
     public boolean betterTreeVeinMining = true;
     public boolean stopBeforeBreakingTool = true;
-    public int minimumRemainingDurability = 1;
-    public int durabilityCostPerBlock = 1;
-    public float exhaustionCostPerBlock = 0.005F;
+    public int minimumRemainingDurability = DEFAULT_MINIMUM_REMAINING_DURABILITY;
+    public int durabilityCostPerBlock = DEFAULT_DURABILITY_COST_PER_BLOCK;
+    public float exhaustionCostPerBlock = DEFAULT_EXHAUSTION_COST_PER_BLOCK;
     public boolean fastLeafDecayEnabled = true;
     public int leafDecaySpeedMultiplier = DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER;
     public LinkedHashSet<String> whitelist = new LinkedHashSet<>();
@@ -51,38 +54,64 @@ public final class VeinMinerConfig {
 
     public List<String> normalize() {
         List<String> corrections = new ArrayList<>();
-        maxOreBlocks = clamp("maxOreBlocks", maxOreBlocks, 1, MAX_BLOCKS_PER_VEIN, DEFAULT_MAX_ORE_BLOCKS, corrections);
-        maxTreeBlocks = clamp("maxTreeBlocks", maxTreeBlocks, 1, MAX_BLOCKS_PER_VEIN, DEFAULT_MAX_TREE_BLOCKS, corrections);
-        maxOtherBlocks = clamp("maxOtherBlocks", maxOtherBlocks, 1, MAX_BLOCKS_PER_VEIN, DEFAULT_MAX_OTHER_BLOCKS, corrections);
-        leafDecaySpeedMultiplier = clamp(
-                "leafDecaySpeedMultiplier",
-                leafDecaySpeedMultiplier,
-                1,
-                MAX_LEAF_DECAY_SPEED_MULTIPLIER,
-                DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER,
-                corrections
-        );
-        durabilityCostPerBlock = clamp(
-                "durabilityCostPerBlock",
-                durabilityCostPerBlock,
-                0,
-                MAX_DURABILITY_COST,
-                1,
-                corrections
-        );
-        minimumRemainingDurability = clamp(
-                "minimumRemainingDurability",
-                minimumRemainingDurability,
-                0,
-                MAX_BLOCKS_PER_VEIN,
-                1,
-                corrections
-        );
+        maxOreBlocks =
+                clamp(
+                        "maxOreBlocks",
+                        maxOreBlocks,
+                        1,
+                        MAX_BLOCKS_PER_VEIN,
+                        DEFAULT_MAX_ORE_BLOCKS,
+                        corrections);
+        maxTreeBlocks =
+                clamp(
+                        "maxTreeBlocks",
+                        maxTreeBlocks,
+                        1,
+                        MAX_BLOCKS_PER_VEIN,
+                        DEFAULT_MAX_TREE_BLOCKS,
+                        corrections);
+        maxOtherBlocks =
+                clamp(
+                        "maxOtherBlocks",
+                        maxOtherBlocks,
+                        1,
+                        MAX_BLOCKS_PER_VEIN,
+                        DEFAULT_MAX_OTHER_BLOCKS,
+                        corrections);
+        leafDecaySpeedMultiplier =
+                clamp(
+                        "leafDecaySpeedMultiplier",
+                        leafDecaySpeedMultiplier,
+                        1,
+                        MAX_LEAF_DECAY_SPEED_MULTIPLIER,
+                        DEFAULT_LEAF_DECAY_SPEED_MULTIPLIER,
+                        corrections);
+        durabilityCostPerBlock =
+                clamp(
+                        "durabilityCostPerBlock",
+                        durabilityCostPerBlock,
+                        0,
+                        MAX_DURABILITY_COST,
+                        DEFAULT_DURABILITY_COST_PER_BLOCK,
+                        corrections);
+        minimumRemainingDurability =
+                clamp(
+                        "minimumRemainingDurability",
+                        minimumRemainingDurability,
+                        0,
+                        MAX_BLOCKS_PER_VEIN,
+                        DEFAULT_MINIMUM_REMAINING_DURABILITY,
+                        corrections);
         if (!Float.isFinite(exhaustionCostPerBlock)
                 || exhaustionCostPerBlock < 0.0F
                 || exhaustionCostPerBlock > MAX_EXHAUSTION_COST) {
-            corrections.add("exhaustionCostPerBlock reset to 0.005 (allowed range: 0.0-" + MAX_EXHAUSTION_COST + ")");
-            exhaustionCostPerBlock = 0.005F;
+            corrections.add(
+                    "exhaustionCostPerBlock reset to "
+                            + DEFAULT_EXHAUSTION_COST_PER_BLOCK
+                            + " (allowed range: 0.0-"
+                            + MAX_EXHAUSTION_COST
+                            + ")");
+            exhaustionCostPerBlock = DEFAULT_EXHAUSTION_COST_PER_BLOCK;
         }
         if (defaultActivationMode == null) {
             defaultActivationMode = ActivationMode.WHILE_SNEAKING;
@@ -105,24 +134,13 @@ public final class VeinMinerConfig {
     }
 
     public boolean isBlockWhitelisted(BlockState state) {
-        if (matchesId(state, deniedBlocks) || matchesAnyTag(state, deniedTags)) {
-            return false;
-        }
-        return matchesId(state, whitelist) || matchesAnyTag(state, allowedTags);
+        return selection().allows(state);
     }
 
-    public boolean addBlockToWhitelist(Block block) {
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && whitelist.add(blockId.toString());
-    }
-
-    public boolean removeBlockFromWhitelist(Block block) {
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && whitelist.remove(blockId.toString());
-    }
-
-    public List<String> whitelistAsSortedList() {
-        return sorted(whitelist);
+    /** The block and tag selection with its tag ids parsed, for checking many blocks at once. */
+    public Selection selection() {
+        return new Selection(
+                whitelist, deniedBlocks, parseTags(allowedTags), parseTags(deniedTags));
     }
 
     public BlockCategory category(BlockState state) {
@@ -154,19 +172,43 @@ public final class VeinMinerConfig {
         OTHER
     }
 
-    private static boolean matchesId(BlockState state, LinkedHashSet<String> ids) {
-        Identifier blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
-        return blockId != BuiltInRegistries.BLOCK.getDefaultKey() && ids.contains(blockId.toString());
+    public record Selection(
+            Set<String> allowedBlocks,
+            Set<String> deniedBlocks,
+            List<TagKey<Block>> allowedTags,
+            List<TagKey<Block>> deniedTags) {
+        public boolean allows(BlockState state) {
+            if (matchesId(state, deniedBlocks) || matchesAnyTag(state, deniedTags)) {
+                return false;
+            }
+            return matchesId(state, allowedBlocks) || matchesAnyTag(state, allowedTags);
+        }
     }
 
-    private static boolean matchesAnyTag(BlockState state, LinkedHashSet<String> tags) {
-        for (String tagId : tags) {
-            TagKey<Block> tag = parseBlockTag(tagId);
-            if (tag != null && state.is(tag)) {
+    private static boolean matchesId(BlockState state, Set<String> ids) {
+        Identifier blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
+        return blockId != BuiltInRegistries.BLOCK.getDefaultKey()
+                && ids.contains(blockId.toString());
+    }
+
+    private static boolean matchesAnyTag(BlockState state, List<TagKey<Block>> tags) {
+        for (TagKey<Block> tag : tags) {
+            if (state.is(tag)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private static List<TagKey<Block>> parseTags(Set<String> tagIds) {
+        List<TagKey<Block>> tags = new ArrayList<>(tagIds.size());
+        for (String tagId : tagIds) {
+            TagKey<Block> tag = parseBlockTag(tagId);
+            if (tag != null) {
+                tags.add(tag);
+            }
+        }
+        return tags;
     }
 
     private static LinkedHashSet<String> defaultAllowedTags() {
@@ -177,7 +219,8 @@ public final class VeinMinerConfig {
     }
 
     private static TagKey<Block> blockTag(String path) {
-        return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(VeinMiner.MOD_ID, path));
+        return TagKey.create(
+                Registries.BLOCK, Identifier.fromNamespaceAndPath(VeinMiner.MOD_ID, path));
     }
 
     private static int clamp(
@@ -186,20 +229,24 @@ public final class VeinMinerConfig {
             int minimum,
             int maximum,
             int defaultValue,
-            List<String> corrections
-    ) {
+            List<String> corrections) {
         if (value >= minimum && value <= maximum) {
             return value;
         }
-        corrections.add(name + " reset to " + defaultValue + " (allowed range: " + minimum + "-" + maximum + ")");
+        corrections.add(
+                name
+                        + " reset to "
+                        + defaultValue
+                        + " (allowed range: "
+                        + minimum
+                        + "-"
+                        + maximum
+                        + ")");
         return defaultValue;
     }
 
     private static LinkedHashSet<String> normalizeIdentifiers(
-            String name,
-            LinkedHashSet<String> values,
-            List<String> corrections
-    ) {
+            String name, LinkedHashSet<String> values, List<String> corrections) {
         LinkedHashSet<String> normalized = new LinkedHashSet<>();
         if (values != null) {
             for (String value : values) {
@@ -215,11 +262,5 @@ public final class VeinMinerConfig {
             }
         }
         return normalized;
-    }
-
-    private static List<String> sorted(LinkedHashSet<String> values) {
-        List<String> sorted = new ArrayList<>(values);
-        sorted.sort(String::compareTo);
-        return sorted;
     }
 }

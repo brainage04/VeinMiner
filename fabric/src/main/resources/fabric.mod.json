@@ -27,7 +27,7 @@
 		"minecraft": "~${minecraft_version}",
 		"java": ">=${java_version}",
 		"fabric-api": "*",
-		"brainagelib": ">=${brainagelib_version}"
+		"brainagelib": ">=${brainagelib_version} <3.0.0"
 	},
 	"suggests": {
 		"telekinesis": "*"

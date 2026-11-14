@@ -4,12 +4,11 @@ import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig.BlockCategory;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
-import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -37,7 +36,7 @@ public final class VeinMiningHandler {
 
     public static float additionalBlockExhaustionCost() {
         MiningContext context = MINING_CONTEXT.get();
-        return context == null ? 0.005F : context.exhaustionCost;
+        return context == null ? 0.0F : context.exhaustionCost;
     }
 
     public static boolean beforeBlockBreak(
@@ -87,55 +86,36 @@ public final class VeinMiningHandler {
 
     private static void mineConnectedBlocks(PendingVein pending) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
+        VeinMinerConfig.Selection selection = config.selection();
         BlockCategory category = config.category(pending.originState);
         int maxBlocks = config.maxBlocks(category);
         if (maxBlocks <= 1) {
             return;
         }
 
-        LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
-        LongOpenHashSet visited =
-                new LongOpenHashSet(
-                        Math.min(maxBlocks * 2, VeinMinerConfig.MAX_BLOCKS_PER_VEIN * 2));
-        LongArrayList connected = new LongArrayList(Math.min(maxBlocks - 1, 128));
-        long origin = pending.originPos.asLong();
-        queue.enqueue(origin);
-        visited.add(origin);
-
-        while (!queue.isEmpty() && connected.size() + 1 < maxBlocks) {
-            BlockPos current = BlockPos.of(queue.dequeueLong());
-            for (int dx = -1; dx <= 1 && connected.size() + 1 < maxBlocks; dx++) {
-                for (int dy = -1; dy <= 1 && connected.size() + 1 < maxBlocks; dy++) {
-                    for (int dz = -1; dz <= 1 && connected.size() + 1 < maxBlocks; dz++) {
-                        if ((dx == 0 && dy == 0 && dz == 0)
-                                || !config.adjacencyMode.includes(dx, dy, dz)) {
-                            continue;
-                        }
-
-                        long neighbor =
-                                BlockPos.asLong(
-                                        current.getX() + dx,
-                                        current.getY() + dy,
-                                        current.getZ() + dz);
-                        if (!visited.add(neighbor)) {
-                            continue;
-                        }
-
-                        BlockPos neighborPos = BlockPos.of(neighbor);
-                        BlockState neighborState = pending.level.getBlockState(neighborPos);
-                        if (!config.isBlockWhitelisted(neighborState)
-                                || !VeinMinerPlayerSettings.allowsBlock(
-                                        pending.player, neighborState)
-                                || !isEquivalentTarget(
-                                        pending.originState, neighborState, category, config)) {
-                            continue;
-                        }
-                        queue.enqueue(neighbor);
-                        connected.add(neighbor);
-                    }
-                }
-            }
-        }
+        ServerLevel level = pending.level;
+        ServerChunkCache chunkSource = level.getChunkSource();
+        LongArrayList connected =
+                VeinSearch.connectedBlocks(
+                        pending.originPos,
+                        maxBlocks,
+                        config.adjacencyMode,
+                        // getChunkNow returns a chunk only when it is present at FULL and its
+                        // ticket still allows FULL (ServerChunkCache.java:175-203,
+                        // GenerationChunkHolder.java:260-262), so a chunk with a ticket that is
+                        // still loading or generating does not count.
+                        (chunkX, chunkZ) -> chunkSource.getChunkNow(chunkX, chunkZ) != null,
+                        neighborPos -> {
+                            if (!pending.player.mayInteract(level, neighborPos)) {
+                                return false;
+                            }
+                            BlockState neighborState = level.getBlockState(neighborPos);
+                            return selection.allows(neighborState)
+                                    && VeinMinerPlayerSettings.allowsBlock(
+                                            pending.player, neighborState)
+                                    && isEquivalentTarget(
+                                            pending.originState, neighborState, category, config);
+                        });
 
         miningVein = true;
         MiningContext context =
@@ -143,9 +123,14 @@ public final class VeinMiningHandler {
         try {
             for (long packedPos : connected) {
                 BlockPos targetPos = BlockPos.of(packedPos);
+                // Another mod's break listener may move the world border or change the ops
+                // while earlier blocks of the vein break.
+                if (!pending.player.mayInteract(pending.level, targetPos)) {
+                    continue;
+                }
                 BlockState targetState = pending.level.getBlockState(targetPos);
                 ItemStack currentTool = pending.player.getMainHandItem();
-                if (!config.isBlockWhitelisted(targetState)
+                if (!selection.allows(targetState)
                         || !VeinMinerPlayerSettings.allowsBlock(pending.player, targetState)
                         || !isEquivalentTarget(pending.originState, targetState, category, config)
                         || currentTool.isEmpty()
