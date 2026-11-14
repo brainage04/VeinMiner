@@ -1,3 +1,18 @@
 plugins {
 	id 'io.github.brainage04.multiloader-mod-conventions' version "${minecraftmodconventions_version}"
 }
+
+// nomad-heavy finds this variable and telekinesis_commit by name to serve the pinned commit to
+// nodes without GitHub access; keep both names.
+def telekinesisRepository = 'https://github.com/brainage04/Telekinesis.git'
+
+multiLoaderModConventions {
+	integrationGameTests {
+		// Veins mined with Telekinesis installed: the drops go to the miner, or stay in the world
+		// when the miner has turned Telekinesis off.
+		telekinesis {
+			filter = 'vein_miner_telekinesis_gametest:*'
+			gitMod(telekinesisRepository, telekinesis_commit)
+		}
+	}
+}
