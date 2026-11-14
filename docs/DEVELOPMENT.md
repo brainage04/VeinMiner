@@ -14,6 +14,8 @@ The server GameTests live in `common/src/gametest`. `fabric/src/gametest` and `n
 
 `:fabric:test` runs the unit tests. `VeinSearchTest` checks the vein search in `VeinSearch` with examples and jqwik properties: a vein never holds more blocks than its cap, never asks for a block whose 3x3 chunk area is not loaded, and is the whole connected region when the cap leaves room. `:fabric:pitest` runs mutation tests on `VeinSearch` against them; it is not part of `check`, and the report is written to `fabric/build/reports/pitest`.
 
+The `telekinesis` integration GameTest suite (`common/src/telekinesis`, registered by `fabric/src/telekinesis` and `neoforge/src/telekinesis`) mines a vein with [Telekinesis](https://github.com/brainage04/Telekinesis) loaded: the drops and experience go to the miner, nothing stays in the world, and the tool pays Vein Miner's durability cost; with the miner's Telekinesis turned off, the drops land in the world. Telekinesis is built from the commit pinned as `telekinesis_commit` in `gradle.properties` and is loaded only in this suite's runs (`:fabric:runTelekinesisGameTest`, `:neoforge:runTelekinesisGameTest` and their production runs, all part of `runAllGameTests`), never in the other GameTests or the release JARs.
+
 BrainageLib 2.0.0 and its test fixtures (`brainagelib-gametest`) are not on Maven Central. CI clones BrainageLib beside the checkout, as `../BrainageLib`, and publishes it to its local repository: `build.yml` at commit `d783aa0a761aa6523fbf3ed291d7b5ca288fbffc`, `release.yml` at tag `v2.0.0`. A local build needs the same:
 
 ```shell

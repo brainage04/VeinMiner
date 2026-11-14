@@ -1,0 +1,23 @@
+modLoader="javafml"
+loaderVersion="[11,)"
+license="MIT"
+
+[[mods]]
+modId="vein_miner_telekinesis_gametest"
+version="1.0.0"
+displayName="Vein Miner Telekinesis compatibility tests"
+description="Vein Miner breaking veins with Telekinesis installed."
+
+[[dependencies.vein_miner_telekinesis_gametest]]
+modId="vein_miner"
+type="required"
+versionRange="*"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.vein_miner_telekinesis_gametest]]
+modId="telekinesis"
+type="required"
+versionRange="*"
+ordering="AFTER"
+side="BOTH"
