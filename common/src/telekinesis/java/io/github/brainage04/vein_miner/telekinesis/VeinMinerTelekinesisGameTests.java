@@ -12,13 +12,20 @@ import io.github.brainage04.telekinesis.player.TelekinesisPlayerSettings;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.ConfigSnapshot;
+import java.util.List;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.Tool;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.block.Blocks;
 
 /**
@@ -28,10 +35,13 @@ import net.minecraft.world.level.block.Blocks;
 public final class VeinMinerTelekinesisGameTests {
     private static final int VEIN_LENGTH = 3;
     private static final int DURABILITY_COST_PER_BLOCK = 3;
-    // Diamond ore drops 3 to 7 experience (Blocks.java:1340, server-26.3). The range is the private
-    // xpRange of DropExperienceBlock (DropExperienceBlock.java:11) with no accessor, so the minimum
-    // is copied here.
-    private static final int DIAMOND_ORE_MIN_EXPERIENCE = 3;
+    // Sets every mined block's experience to one fixed amount (the suite's data), so the test can
+    // count each block's share: an ore's own amount is random (diamond ore 3 to 7, Blocks.java:1340).
+    private static final ResourceKey<Enchantment> FIXED_EXPERIENCE =
+            ResourceKey.create(
+                    Registries.ENCHANTMENT,
+                    Identifier.fromNamespaceAndPath(
+                            "vein_miner_telekinesis_gametest", "fixed_experience"));
 
     private VeinMinerTelekinesisGameTests() {}
 
@@ -55,6 +65,20 @@ public final class VeinMinerTelekinesisGameTests {
                 helper.setBlock(ORIGIN.east(i), Blocks.DIAMOND_ORE);
             }
             ItemStack pickaxe = player.getMainHandItem();
+            pickaxe.enchant(
+                    helper.getLevel()
+                            .registryAccess()
+                            .lookupOrThrow(Registries.ENCHANTMENT)
+                            .getOrThrow(FIXED_EXPERIENCE),
+                    1);
+            int experiencePerBlock =
+                    EnchantmentHelper.processBlockExperience(helper.getLevel(), pickaxe, 0);
+            // One orb per block, which no other block's orb joins (ExperienceOrb.java:204-216 merges
+            // only within half a block), so the orbs' values add up to the vein's experience.
+            helper.assertValueEqual(
+                    ExperienceOrb.getExperienceValue(experiencePerBlock),
+                    experiencePerBlock,
+                    "a block's experience as a single orb");
             Tool tool = pickaxe.get(DataComponents.TOOL);
             int experienceBefore = player.totalExperience;
 
@@ -69,18 +93,16 @@ public final class VeinMinerTelekinesisGameTests {
                     "pickaxe damage: vanilla's for the origin, the configured cost for each"
                             + " additional block");
             int experienceGained = player.totalExperience - experienceBefore;
-            if (telekinesis) {
-                helper.assertTrue(
-                        experienceGained >= DIAMOND_ORE_MIN_EXPERIENCE * VEIN_LENGTH,
-                        "Expected the experience of all "
-                                + VEIN_LENGTH
-                                + " ores to go to the miner, gained "
-                                + experienceGained);
-                helper.assertEntityNotPresent(EntityTypes.EXPERIENCE_ORB);
-            } else {
-                helper.assertValueEqual(experienceGained, 0, "experience gained directly");
-                helper.assertEntityPresent(EntityTypes.EXPERIENCE_ORB);
-            }
+            List<ExperienceOrb> orbs = helper.getEntities(EntityTypes.EXPERIENCE_ORB);
+            helper.assertValueEqual(
+                    experienceGained,
+                    telekinesis ? experiencePerBlock * VEIN_LENGTH : 0,
+                    "experience given to the miner");
+            helper.assertValueEqual(orbs.size(), telekinesis ? 0 : VEIN_LENGTH, "experience orbs");
+            helper.assertValueEqual(
+                    orbs.stream().mapToInt(ExperienceOrb::getValue).sum(),
+                    telekinesis ? 0 : experiencePerBlock * VEIN_LENGTH,
+                    "experience in orbs");
 
             helper.succeedWhen(
                     () -> {
