@@ -36,7 +36,8 @@ public final class VeinMinerTelekinesisGameTests {
     private static final int VEIN_LENGTH = 3;
     private static final int DURABILITY_COST_PER_BLOCK = 3;
     // Sets every mined block's experience to one fixed amount (the suite's data), so the test can
-    // count each block's share: an ore's own amount is random (diamond ore 3 to 7, Blocks.java:1340).
+    // count each block's share: an ore's own amount is random (diamond ore 3 to 7,
+    // Blocks.java:1340).
     private static final ResourceKey<Enchantment> FIXED_EXPERIENCE =
             ResourceKey.create(
                     Registries.ENCHANTMENT,
@@ -73,8 +74,9 @@ public final class VeinMinerTelekinesisGameTests {
                     1);
             int experiencePerBlock =
                     EnchantmentHelper.processBlockExperience(helper.getLevel(), pickaxe, 0);
-            // One orb per block, which no other block's orb joins (ExperienceOrb.java:204-216 merges
-            // only within half a block), so the orbs' values add up to the vein's experience.
+            // One orb per block, which no other block's orb joins (ExperienceOrb.java:204-216
+            // merges only within half a block), so the orbs' values add up to the vein's
+            // experience.
             helper.assertValueEqual(
                     ExperienceOrb.getExperienceValue(experiencePerBlock),
                     experiencePerBlock,
