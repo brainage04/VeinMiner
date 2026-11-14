@@ -49,3 +49,4 @@ replay_*.log
 # test tooling
 
 .jqwik-database
+.gametest.lock
