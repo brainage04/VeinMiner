@@ -49,7 +49,10 @@ public final class VeinMinerLeafGameTests {
 
             scenario.level.getGameRules().set(GameRules.RANDOM_TICK_SPEED, 4096, scenario.server);
             scenario.queue();
-            scenario.level.setBlock(helper.absolutePos(LEAF), scenario.decaying.setValue(BlockStateProperties.PERSISTENT, true), 2);
+            scenario.level.setBlock(
+                    helper.absolutePos(LEAF),
+                    scenario.decaying.setValue(BlockStateProperties.PERSISTENT, true),
+                    2);
             scenario.drain();
             helper.assertBlockPresent(Blocks.OAK_LEAVES, LEAF);
 
@@ -68,9 +71,11 @@ public final class VeinMinerLeafGameTests {
         private final boolean enabled;
         private final int multiplier;
         private final int randomTickSpeed;
-        private final BlockState decaying = Blocks.OAK_LEAVES.defaultBlockState()
-                .setValue(BlockStateProperties.PERSISTENT, false)
-                .setValue(BlockStateProperties.DISTANCE, LeavesBlock.DECAY_DISTANCE);
+        private final BlockState decaying =
+                Blocks.OAK_LEAVES
+                        .defaultBlockState()
+                        .setValue(BlockStateProperties.PERSISTENT, false)
+                        .setValue(BlockStateProperties.DISTANCE, LeavesBlock.DECAY_DISTANCE);
 
         private Scenario(GameTestHelper helper) {
             this.helper = helper;

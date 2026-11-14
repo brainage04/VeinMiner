@@ -13,7 +13,10 @@ Mining is enabled server-wide by default. Each player also has a persistent pers
 - Adjacency can use faces only, faces and edges, or all 26 neighboring positions.
 - Better ore mining joins matching normal and deepslate ore variants. Better tree mining joins logs, wood, stems, and hyphae from the same wood family, including stripped variants.
 - Extra blocks use configurable durability and exhaustion costs. Tool protection stops traversal before an extra block would cross the configured remaining-durability floor.
-- Fast leaf decay has its own enable switch and multiplier; it is independent of connected tree mining.
+- A vein skips blocks the player may not touch, such as blocks under spawn protection or beyond the world border, and blocks in or next to chunks that are not loaded.
+- Other mods, such as claim mods, are asked about every extra block through the break events: Fabric's `PlayerBlockBreakEvents.BEFORE` and NeoForge's `BreakBlockEvent`. Hooks that fire only when a player starts digging are not asked again: Fabric's `AttackBlockCallback` and NeoForge's `PlayerInteractEvent.LeftClickBlock`.
+- Leaves are never vein-mined, even when a selection allows them.
+- Fast leaf decay has its own enable switch and multiplier, independent of connected tree mining.
 
 Vanilla loot tables, block entities, mining statistics, and tool checks are preserved for every mined block.
 
@@ -21,7 +24,7 @@ Vanilla loot tables, block entities, mining statistics, and tool checks are pres
 
 - Minecraft 26.3
 - Fabric Loader 0.19.5 or newer with Fabric API, or NeoForge 26.3.0.99 or newer
-- BrainageLib 1.3.0 or newer
+- BrainageLib 2.0.0 or newer, below 3.0.0
 - Java 25 or newer
 - Install Vein Miner and BrainageLib on the server.
 
@@ -31,6 +34,7 @@ Vanilla loot tables, block entities, mining statistics, and tool checks are pres
 
 `/veinminer` shows the effective global and personal state plus relevant help.
 
+- `/veinminer help`
 - `/veinminer toggle`
 - `/veinminer enable`
 - `/veinminer disable`
@@ -91,7 +95,9 @@ Server policy is stored in `config/vein_miner.json`. Changes made through operat
 
 Persistent player preferences are stored per world in `<world>/vein-miner-players.json`. Removing a block from the global policy does not erase it from player lists; it remains inactive unless an operator allows it again.
 
-If either file cannot be read (malformed, or written by a newer version), Vein Miner leaves it untouched: changes made with commands apply until the server stops and the command says they could not be saved. Fix the file and restart the server; for `vein_miner.json`, `/veinminer admin reload` also works.
+If either file cannot be read (malformed JSON, or a player file with another `schemaVersion`), Vein Miner leaves it untouched: changes made with commands apply until the server stops and the command says they could not be saved. Fix the file and restart the server. For `vein_miner.json`, `/veinminer admin reload` also works. `vein_miner.json` has no version number: one written by a newer Vein Miner loads, and the settings this version does not know are dropped the next time a command saves the file.
+
+A `vein_miner.json` from Vein Miner 1.0.1 or earlier, recognised by its `veinSize`, is converted on load. Its `veinSize` becomes all three category limits. Its `whitelist` stays the complete list of blocks to vein-mine, with no tags allowed, unless it is still 1.0.1's default list, which gets the default tags as well.
 
 ## Compatibility
 

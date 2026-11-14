@@ -13,8 +13,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public interface ServerPlatform {
-    String loaderName();
-
     Path configDirectory();
 
     void registerCommands(CommandRegistrar registrar);

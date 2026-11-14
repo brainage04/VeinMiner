@@ -16,12 +16,15 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class VeinMinerPlayerSettings {
     public static final int MAX_PERSONAL_WHITELIST_SIZE = 64;
-    private static final WorldPlayerStore<PlayerPreference> STORE = WorldPlayerStore
-            .builder("vein-miner-players.json", PlayerPreference.class, PlayerPreference::new)
-            .normalizer(PlayerPreference::normalize)
-            .description("Vein Miner player settings")
-            .logger(VeinMiner.LOGGER)
-            .build();
+    private static final WorldPlayerStore<PlayerPreference> STORE =
+            WorldPlayerStore.builder(
+                            "vein-miner-players.json",
+                            PlayerPreference.class,
+                            PlayerPreference::new)
+                    .normalizer(PlayerPreference::normalize)
+                    .description("Vein Miner player settings")
+                    .logger(VeinMiner.LOGGER)
+                    .build();
 
     private VeinMinerPlayerSettings() {}
 
@@ -96,7 +99,8 @@ public final class VeinMinerPlayerSettings {
         return save() ? WhitelistAddResult.ADDED : WhitelistAddResult.ADDED_NOT_SAVED;
     }
 
-    public static synchronized WhitelistRemoveResult removePersonalBlock(ServerPlayer player, Block block) {
+    public static synchronized WhitelistRemoveResult removePersonalBlock(
+            ServerPlayer player, Block block) {
         Identifier blockId = BuiltInRegistries.BLOCK.getKey(block);
         boolean removed =
                 blockId != BuiltInRegistries.BLOCK.getDefaultKey()

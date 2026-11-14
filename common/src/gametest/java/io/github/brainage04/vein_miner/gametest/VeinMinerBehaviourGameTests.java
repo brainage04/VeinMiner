@@ -1,5 +1,9 @@
 package io.github.brainage04.vein_miner.gametest;
 
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.ORIGIN;
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.allowBlock;
+import static io.github.brainage04.vein_miner.gametest.VeinMinerTestFixtures.resetPlayer;
+
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.brainage04.brainagelib.gametest.GameTestPlayer;
 import io.github.brainage04.vein_miner.command.VeinMinerCommand;
@@ -15,7 +19,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -26,8 +29,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.storage.LevelResource;
 
 public final class VeinMinerBehaviourGameTests {
-    private static final BlockPos ORIGIN = new BlockPos(1, 1, 1);
-
     public static void playerSettingsFromPreviousVersionLoad(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         Path file = server.getWorldPath(LevelResource.ROOT).resolve("vein-miner-players.json");
@@ -35,23 +36,35 @@ public final class VeinMinerBehaviourGameTests {
         try {
             byte[] original = Files.readAllBytes(file);
             try {
-                String previous = "{\n  \"schemaVersion\": 1,\n  \"players\": {\n    \"" + player.getUUID()
-                        + "\": {\n      \"enabled\": false,\n      \"activationMode\": \"while_not_sneaking\",\n"
-                        + "      \"personalWhitelistEnabled\": true,\n      \"personalWhitelist\": [\n"
-                        + "        \"minecraft:diamond_ore\"\n      ]\n    }\n  }\n}";
+                String previous =
+                        "{\n  \"schemaVersion\": 1,\n  \"players\": {\n    \""
+                                + player.getUUID()
+                                + "\": {\n      \"enabled\": false,\n      \"activationMode\": \"while_not_sneaking\",\n"
+                                + "      \"personalWhitelistEnabled\": true,\n      \"personalWhitelist\": [\n"
+                                + "        \"minecraft:diamond_ore\"\n      ]\n    }\n  }\n}";
                 Files.writeString(file, previous);
                 VeinMinerPlayerSettings.load(server);
-                helper.assertTrue(!VeinMinerPlayerSettings.isEnabled(player), "The toggle must load");
-                helper.assertTrue(VeinMinerPlayerSettings.activationMode(player) == ActivationMode.WHILE_NOT_SNEAKING, "The activation mode must load");
-                helper.assertTrue(VeinMinerPlayerSettings.personalWhitelist(player).equals(List.of("minecraft:diamond_ore")), "The personal whitelist must load");
+                helper.assertTrue(
+                        !VeinMinerPlayerSettings.isEnabled(player), "The toggle must load");
+                helper.assertTrue(
+                        VeinMinerPlayerSettings.activationMode(player)
+                                == ActivationMode.WHILE_NOT_SNEAKING,
+                        "The activation mode must load");
+                helper.assertTrue(
+                        VeinMinerPlayerSettings.personalWhitelist(player)
+                                .equals(List.of("minecraft:diamond_ore")),
+                        "The personal whitelist must load");
                 VeinMinerPlayerSettings.shutdown(server);
-                helper.assertTrue(Files.readString(file).equals(previous), "Saving unchanged settings must keep the file's format");
+                helper.assertTrue(
+                        Files.readString(file).equals(previous),
+                        "Saving unchanged settings must keep the file's format");
             } finally {
                 Files.write(file, original);
                 VeinMinerPlayerSettings.load(server);
             }
         } catch (IOException exception) {
-            throw new AssertionError("Could not exercise the world's player settings file", exception);
+            throw new AssertionError(
+                    "Could not exercise the world's player settings file", exception);
         }
         helper.succeed();
     }
@@ -65,24 +78,39 @@ public final class VeinMinerBehaviourGameTests {
         try {
             byte[] original = Files.readAllBytes(file);
             try {
-                for (String document : List.of("{\"schemaVersion\": 1, \"players\": {", "{\"schemaVersion\": 2, \"players\": {}}")) {
+                for (String document :
+                        List.of(
+                                "{\"schemaVersion\": 1, \"players\": {",
+                                "{\"schemaVersion\": 2, \"players\": {}}")) {
                     byte[] bytes = document.getBytes(StandardCharsets.UTF_8);
                     Files.write(file, bytes);
                     VeinMinerPlayerSettings.load(server);
-                    helper.assertTrue(!VeinMinerPlayerSettings.setEnabled(player, false), "Unreadable settings must not be replaced by a preference change");
-                    helper.assertTrue(!VeinMinerPlayerSettings.isEnabled(player), "The unsaved preference must still apply this session");
-                    helper.assertTrue(VeinMinerPlayerSettings.removePersonalBlock(player, Blocks.STONE)
-                            == VeinMinerPlayerSettings.WhitelistRemoveResult.NOT_PRESENT, "Removing an absent block must not count as a change");
-                    helper.assertTrue(!VeinMinerPlayerSettings.clearPersonalWhitelist(player), "Clearing must report that it was not saved");
+                    helper.assertTrue(
+                            !VeinMinerPlayerSettings.setEnabled(player, false),
+                            "Unreadable settings must not be replaced by a preference change");
+                    helper.assertTrue(
+                            !VeinMinerPlayerSettings.isEnabled(player),
+                            "The unsaved preference must still apply this session");
+                    helper.assertTrue(
+                            VeinMinerPlayerSettings.removePersonalBlock(player, Blocks.STONE)
+                                    == VeinMinerPlayerSettings.WhitelistRemoveResult.NOT_PRESENT,
+                            "Removing an absent block must not count as a change");
+                    helper.assertTrue(
+                            !VeinMinerPlayerSettings.clearPersonalWhitelist(player),
+                            "Clearing must report that it was not saved");
                     VeinMinerPlayerSettings.shutdown(server);
-                    helper.assertTrue(Arrays.equals(Files.readAllBytes(file), bytes), "Shutdown must preserve unreadable or newer-schema settings: " + document);
+                    helper.assertTrue(
+                            Arrays.equals(Files.readAllBytes(file), bytes),
+                            "Shutdown must preserve unreadable or newer-schema settings: "
+                                    + document);
                 }
             } finally {
                 Files.write(file, original);
                 VeinMinerPlayerSettings.load(server);
             }
         } catch (IOException exception) {
-            throw new AssertionError("Could not exercise the world's player settings file", exception);
+            throw new AssertionError(
+                    "Could not exercise the world's player settings file", exception);
         } finally {
             resetPlayer(player);
         }
@@ -102,17 +130,18 @@ public final class VeinMinerBehaviourGameTests {
             config.maxOreBlocks = 2;
             config.deniedBlocks.clear();
             config.deniedTags.clear();
-            config.addBlockToWhitelist(Blocks.DIAMOND_ORE);
+            allowBlock(config, Blocks.DIAMOND_ORE);
             for (ActivationMode mode : ActivationMode.values()) {
                 VeinMinerPlayerSettings.setActivationMode(player, mode);
                 for (boolean sneaking : new boolean[] {false, true}) {
                     player.setShiftKeyDown(sneaking);
-                    boolean expected = switch (mode) {
-                        case ALWAYS -> true;
-                        case NEVER -> false;
-                        case WHILE_SNEAKING -> sneaking;
-                        case WHILE_NOT_SNEAKING -> !sneaking;
-                    };
+                    boolean expected =
+                            switch (mode) {
+                                case ALWAYS -> true;
+                                case NEVER -> false;
+                                case WHILE_SNEAKING -> sneaking;
+                                case WHILE_NOT_SNEAKING -> !sneaking;
+                            };
                     minePair(helper, player, expected);
                 }
             }
@@ -136,34 +165,61 @@ public final class VeinMinerBehaviourGameTests {
         helper.succeed();
     }
 
-    public static void personalCommandsPersistAndCannotOverrideServerDenials(GameTestHelper helper) {
+    public static void personalCommandsPersistAndCannotOverrideServerDenials(
+            GameTestHelper helper) {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         var whitelist = new LinkedHashSet<>(config.whitelist);
         var deniedBlocks = new LinkedHashSet<>(config.deniedBlocks);
         var deniedTags = new LinkedHashSet<>(config.deniedTags);
-        GameTestPlayer fixture = GameTestPlayer.join(helper, "VmCommands").gameMode(GameType.SURVIVAL);
+        GameTestPlayer fixture =
+                GameTestPlayer.join(helper, "VmCommands").gameMode(GameType.SURVIVAL);
         ServerPlayer player = fixture.player();
         CommandSourceStack source = player.createCommandSourceStack();
         try {
             config.deniedBlocks.clear();
             config.deniedTags.clear();
-            config.addBlockToWhitelist(Blocks.DIAMOND_ORE);
+            allowBlock(config, Blocks.DIAMOND_ORE);
             run(source, "veinminer whitelist add minecraft:diamond_ore");
-            helper.assertTrue(VeinMinerPlayerSettings.isPersonalWhitelistEnabled(player), "Adding a block must enable the personal filter");
+            helper.assertTrue(
+                    VeinMinerPlayerSettings.isPersonalWhitelistEnabled(player),
+                    "Adding a block must enable the personal filter");
             run(source, "veinminer mode while_not_sneaking");
             run(source, "veinminer disable");
-            helper.assertTrue(fixture.received("[Vein Miner] Your Vein Miner toggle is now disabled."),
+            helper.assertTrue(
+                    fixture.received("[Vein Miner] Your Vein Miner toggle is now disabled."),
                     "The player must be told about the change, got " + fixture.messageTexts());
+            run(source, "veinminer help");
+            helper.assertTrue(
+                    fixture.received("[Vein Miner] Player commands:")
+                            && fixture.received(
+                                    "[Vein Miner] /veinminer whitelist add or remove <block> - change your list"),
+                    "Help must list the player commands, got " + fixture.messageTexts());
             VeinMinerPlayerSettings.load(helper.getLevel().getServer());
-            helper.assertTrue(!VeinMinerPlayerSettings.isEnabled(player), "Disabled preference must survive reload");
-            helper.assertTrue(VeinMinerPlayerSettings.activationMode(player) == ActivationMode.WHILE_NOT_SNEAKING, "Activation mode must survive reload");
-            helper.assertTrue(VeinMinerPlayerSettings.allowsBlock(player, Blocks.DIAMOND_ORE.defaultBlockState()), "Personal whitelist must survive reload");
+            helper.assertTrue(
+                    !VeinMinerPlayerSettings.isEnabled(player),
+                    "Disabled preference must survive reload");
+            helper.assertTrue(
+                    VeinMinerPlayerSettings.activationMode(player)
+                            == ActivationMode.WHILE_NOT_SNEAKING,
+                    "Activation mode must survive reload");
+            helper.assertTrue(
+                    VeinMinerPlayerSettings.allowsBlock(
+                            player, Blocks.DIAMOND_ORE.defaultBlockState()),
+                    "Personal whitelist must survive reload");
             run(source, "veinminer whitelist clear");
-            helper.assertTrue(!VeinMinerPlayerSettings.allowsBlock(player, Blocks.DIAMOND_ORE.defaultBlockState()), "An enabled empty filter must reject blocks");
+            helper.assertTrue(
+                    !VeinMinerPlayerSettings.allowsBlock(
+                            player, Blocks.DIAMOND_ORE.defaultBlockState()),
+                    "An enabled empty filter must reject blocks");
             config.deniedBlocks.add("minecraft:diamond_ore");
-            helper.assertTrue(execute(source, "veinminer whitelist add minecraft:diamond_ore") == 0, "A personal command must not admit a server-denied block");
+            helper.assertTrue(
+                    execute(source, "veinminer whitelist add minecraft:diamond_ore") == 0,
+                    "A personal command must not admit a server-denied block");
             run(source, "veinminer whitelist disable");
-            helper.assertTrue(VeinMinerPlayerSettings.allowsBlock(player, Blocks.DIAMOND_ORE.defaultBlockState()), "Disabling the personal filter must restore its pass-through");
+            helper.assertTrue(
+                    VeinMinerPlayerSettings.allowsBlock(
+                            player, Blocks.DIAMOND_ORE.defaultBlockState()),
+                    "Disabling the personal filter must restore its pass-through");
         } finally {
             config.whitelist = whitelist;
             config.deniedBlocks = deniedBlocks;
@@ -180,7 +236,8 @@ public final class VeinMinerBehaviourGameTests {
         int ore = config.maxOreBlocks;
         int tree = config.maxTreeBlocks;
         int other = config.maxOtherBlocks;
-        CommandSourceStack source = helper.getLevel().getServer().createCommandSourceStack().withSuppressedOutput();
+        CommandSourceStack source =
+                helper.getLevel().getServer().createCommandSourceStack().withSuppressedOutput();
         ServerPlayer player = player(helper);
         try {
             run(source, "veinminer admin disable");
@@ -191,11 +248,18 @@ public final class VeinMinerBehaviourGameTests {
             config.maxOreBlocks = 1;
             run(source, "veinminer admin reload");
             VeinMinerConfig reloaded = VeinMinerConfigManager.getConfig();
-            helper.assertTrue(!reloaded.enableVeinMining && reloaded.maxOreBlocks == 7 && reloaded.maxTreeBlocks == 9 && reloaded.maxOtherBlocks == 3, "Admin settings must be saved and reloaded independently");
+            helper.assertTrue(
+                    !reloaded.enableVeinMining
+                            && reloaded.maxOreBlocks == 7
+                            && reloaded.maxTreeBlocks == 9
+                            && reloaded.maxOtherBlocks == 3,
+                    "Admin settings must be saved and reloaded independently");
             expectRejected(source, "veinminer admin limit ore 0");
             expectRejected(source, "veinminer admin limit ore 4097");
             expectRejected(player.createCommandSourceStack(), "veinminer admin enable");
-            helper.assertTrue(!reloaded.enableVeinMining && reloaded.maxOreBlocks == 7, "Rejected commands must leave policy unchanged");
+            helper.assertTrue(
+                    !reloaded.enableVeinMining && reloaded.maxOreBlocks == 7,
+                    "Rejected commands must leave policy unchanged");
         } finally {
             VeinMinerConfig current = VeinMinerConfigManager.getConfig();
             current.enableVeinMining = enabled;
@@ -212,17 +276,25 @@ public final class VeinMinerBehaviourGameTests {
         VeinMinerConfig config = VeinMinerConfigManager.getConfig();
         var whitelist = new LinkedHashSet<>(config.whitelist);
         ServerPlayer player = player(helper);
-        CommandSourceStack source = helper.getLevel().getServer().createCommandSourceStack()
-                .withEntity(player).withSuppressedOutput();
+        CommandSourceStack source =
+                helper.getLevel()
+                        .getServer()
+                        .createCommandSourceStack()
+                        .withEntity(player)
+                        .withSuppressedOutput();
         try {
-            config.addBlockToWhitelist(Blocks.DIAMOND_ORE);
+            allowBlock(config, Blocks.DIAMOND_ORE);
             run(source, "veinminer admin selection blocks allow clear");
             helper.assertTrue(!config.whitelist.isEmpty(), "First clear must request confirmation");
             VeinMinerCommand.shutdown(source.getServer());
             run(source, "veinminer admin selection blocks allow clear");
-            helper.assertTrue(!config.whitelist.isEmpty(), "A previous server's confirmation must not clear this server's whitelist");
+            helper.assertTrue(
+                    !config.whitelist.isEmpty(),
+                    "A previous server's confirmation must not clear this server's whitelist");
             run(source, "veinminer admin selection blocks allow clear");
-            helper.assertTrue(config.whitelist.isEmpty(), "Second clear in the same session must clear the whitelist");
+            helper.assertTrue(
+                    config.whitelist.isEmpty(),
+                    "Second clear in the same session must clear the whitelist");
         } finally {
             VeinMinerCommand.shutdown(source.getServer());
             config.whitelist = whitelist;
@@ -240,18 +312,16 @@ public final class VeinMinerBehaviourGameTests {
         return player;
     }
 
-    private static void minePair(GameTestHelper helper, ServerPlayer player, boolean connectedMined) {
+    private static void minePair(
+            GameTestHelper helper, ServerPlayer player, boolean connectedMined) {
         helper.setBlock(ORIGIN, Blocks.DIAMOND_ORE);
         helper.setBlock(ORIGIN.east(), Blocks.DIAMOND_ORE);
-        helper.assertTrue(player.gameMode.destroyBlock(helper.absolutePos(ORIGIN)), "Original block must be mined normally");
-        helper.assertTrue(helper.getBlockState(ORIGIN.east()).isAir() == connectedMined, "Connected mining did not match the activation/tool policy");
-    }
-
-    private static void resetPlayer(ServerPlayer player) {
-        VeinMinerPlayerSettings.setEnabled(player, true);
-        VeinMinerPlayerSettings.setActivationMode(player, ActivationMode.WHILE_SNEAKING);
-        VeinMinerPlayerSettings.clearPersonalWhitelist(player);
-        VeinMinerPlayerSettings.setPersonalWhitelistEnabled(player, false);
+        helper.assertTrue(
+                player.gameMode.destroyBlock(helper.absolutePos(ORIGIN)),
+                "Original block must be mined normally");
+        helper.assertTrue(
+                helper.getBlockState(ORIGIN.east()).isAir() == connectedMined,
+                "Connected mining did not match the activation/tool policy");
     }
 
     private static int execute(CommandSourceStack source, String command) {
