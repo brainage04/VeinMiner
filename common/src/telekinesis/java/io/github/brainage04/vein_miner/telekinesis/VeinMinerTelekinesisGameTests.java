@@ -28,6 +28,10 @@ import net.minecraft.world.level.block.Blocks;
 public final class VeinMinerTelekinesisGameTests {
     private static final int VEIN_LENGTH = 3;
     private static final int DURABILITY_COST_PER_BLOCK = 3;
+    // Diamond ore drops 3 to 7 experience (Blocks.java:1340, server-26.3). The range is the private
+    // xpRange of DropExperienceBlock (DropExperienceBlock.java:11) with no accessor, so the minimum
+    // is copied here.
+    private static final int DIAMOND_ORE_MIN_EXPERIENCE = 3;
 
     private VeinMinerTelekinesisGameTests() {}
 
@@ -67,8 +71,10 @@ public final class VeinMinerTelekinesisGameTests {
             int experienceGained = player.totalExperience - experienceBefore;
             if (telekinesis) {
                 helper.assertTrue(
-                        experienceGained > 0,
-                        "Expected the vein's experience to go to the miner, gained "
+                        experienceGained >= DIAMOND_ORE_MIN_EXPERIENCE * VEIN_LENGTH,
+                        "Expected the experience of all "
+                                + VEIN_LENGTH
+                                + " ores to go to the miner, gained "
                                 + experienceGained);
                 helper.assertEntityNotPresent(EntityTypes.EXPERIENCE_ORB);
             } else {
