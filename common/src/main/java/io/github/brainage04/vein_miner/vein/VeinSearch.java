@@ -24,8 +24,8 @@ public final class VeinSearch {
     /**
      * The blocks joined to {@code origin} through blocks that {@code accepts}, nearest steps first,
      * as packed positions. The origin counts towards {@code maxBlocks} and is not in the list, so
-     * the list holds at most {@code maxBlocks - 1} blocks. A block is offered to {@code accepts}
-     * at most once, and only when the chunk holding it and the eight chunks around it are loaded.
+     * the list holds at most {@code maxBlocks - 1} blocks. A block is offered to {@code accepts} at
+     * most once, and only when the chunk holding it and the eight chunks around it are loaded.
      */
     public static LongArrayList connectedBlocks(
             BlockPos origin,
@@ -80,8 +80,8 @@ public final class VeinSearch {
     }
 
     /**
-     * Whether the chunk holding {@code pos} and the eight chunks around it are all loaded. Reading a
-     * block in a chunk that is not loaded blocks the server thread until the chunk is loaded or
+     * Whether the chunk holding {@code pos} and the eight chunks around it are all loaded. Reading
+     * a block in a chunk that is not loaded blocks the server thread until the chunk is loaded or
      * generated (Level.java:353-360, ServerChunkCache.java:162-163). Breaking a block reads its six
      * neighbours (Level.java:245,254, NeighborUpdater.java:45), which lie in these nine chunks. A
      * neighbour that changes shape reads its own neighbours and updates them in turn

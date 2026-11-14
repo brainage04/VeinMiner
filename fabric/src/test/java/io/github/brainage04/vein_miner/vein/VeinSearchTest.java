@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.github.brainage04.vein_miner.config.AdjacencyMode;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,8 +40,7 @@ class VeinSearchTest {
 
     @Property
     void anOpenFieldFillsTheCapExactly(
-            @ForAll @IntRange(min = 1, max = 600) int maxBlocks,
-            @ForAll AdjacencyMode adjacency) {
+            @ForAll @IntRange(min = 1, max = 600) int maxBlocks, @ForAll AdjacencyMode adjacency) {
         LongArrayList vein =
                 VeinSearch.connectedBlocks(
                         new BlockPos(3, 70, -9), maxBlocks, adjacency, ALL_LOADED, pos -> true);
@@ -137,8 +136,7 @@ class VeinSearchTest {
         BlockPos origin = new BlockPos(originX, -20, originZ);
         VeinSearch.LoadedChunks chunks = loadedChunks(chunkSeed, loadedShare);
         Predicate<BlockPos> accepts = accepted(origin, seed, density);
-        LongArrayList vein =
-                VeinSearch.connectedBlocks(origin, 10_000, adjacency, chunks, accepts);
+        LongArrayList vein = VeinSearch.connectedBlocks(origin, 10_000, adjacency, chunks, accepts);
 
         assertEquals(
                 floodFill(origin, adjacency, pos -> areaLoaded(chunks, pos) && accepts.test(pos)),
