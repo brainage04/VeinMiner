@@ -75,8 +75,8 @@ public final class VeinMinerTelekinesisGameTests {
             int experiencePerBlock =
                     EnchantmentHelper.processBlockExperience(helper.getLevel(), pickaxe, 0);
             // One orb per block, which no other block's orb joins (ExperienceOrb.java:204-216
-            // merges only within half a block), so the orbs' values add up to the vein's
-            // experience.
+            // merges only into an orb inside a 1-block box around the new one), so the orbs'
+            // values add up to the vein's experience.
             helper.assertValueEqual(
                     ExperienceOrb.getExperienceValue(experiencePerBlock),
                     experiencePerBlock,
