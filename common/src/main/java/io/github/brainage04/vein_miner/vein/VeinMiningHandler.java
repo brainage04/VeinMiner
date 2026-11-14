@@ -4,12 +4,8 @@ import io.github.brainage04.vein_miner.config.VeinMinerConfig;
 import io.github.brainage04.vein_miner.config.VeinMinerConfig.BlockCategory;
 import io.github.brainage04.vein_miner.config.VeinMinerConfigManager;
 import io.github.brainage04.vein_miner.player.VeinMinerPlayerSettings;
-import it.unimi.dsi.fastutil.longs.Long2BooleanOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerChunkCache;
@@ -17,7 +13,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -98,54 +93,29 @@ public final class VeinMiningHandler {
             return;
         }
 
-        LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
-        LongOpenHashSet visited =
-                new LongOpenHashSet(
-                        Math.min(maxBlocks * 2, VeinMinerConfig.MAX_BLOCKS_PER_VEIN * 2));
-        LongArrayList connected = new LongArrayList(Math.min(maxBlocks - 1, 128));
-        Long2BooleanOpenHashMap loadedAreas = new Long2BooleanOpenHashMap();
-        long origin = pending.originPos.asLong();
-        queue.enqueue(origin);
-        visited.add(origin);
-
-        while (!queue.isEmpty() && connected.size() + 1 < maxBlocks) {
-            BlockPos current = BlockPos.of(queue.dequeueLong());
-            for (int dx = -1; dx <= 1 && connected.size() + 1 < maxBlocks; dx++) {
-                for (int dy = -1; dy <= 1 && connected.size() + 1 < maxBlocks; dy++) {
-                    for (int dz = -1; dz <= 1 && connected.size() + 1 < maxBlocks; dz++) {
-                        if ((dx == 0 && dy == 0 && dz == 0)
-                                || !config.adjacencyMode.includes(dx, dy, dz)) {
-                            continue;
-                        }
-
-                        long neighbor =
-                                BlockPos.asLong(
-                                        current.getX() + dx,
-                                        current.getY() + dy,
-                                        current.getZ() + dz);
-                        if (!visited.add(neighbor)) {
-                            continue;
-                        }
-
-                        BlockPos neighborPos = BlockPos.of(neighbor);
-                        if (!isAreaLoaded(pending.level, neighborPos, loadedAreas)
-                                || !pending.player.mayInteract(pending.level, neighborPos)) {
-                            continue;
-                        }
-                        BlockState neighborState = pending.level.getBlockState(neighborPos);
-                        if (!selection.allows(neighborState)
-                                || !VeinMinerPlayerSettings.allowsBlock(
-                                        pending.player, neighborState)
-                                || !isEquivalentTarget(
-                                        pending.originState, neighborState, category, config)) {
-                            continue;
-                        }
-                        queue.enqueue(neighbor);
-                        connected.add(neighbor);
-                    }
-                }
-            }
-        }
+        ServerLevel level = pending.level;
+        ServerChunkCache chunkSource = level.getChunkSource();
+        LongArrayList connected =
+                VeinSearch.connectedBlocks(
+                        pending.originPos,
+                        maxBlocks,
+                        config.adjacencyMode,
+                        // getChunkNow returns a chunk only when it is present at FULL and its
+                        // ticket still allows FULL (ServerChunkCache.java:175-203,
+                        // GenerationChunkHolder.java:260-262), so a chunk with a ticket that is
+                        // still loading or generating does not count.
+                        (chunkX, chunkZ) -> chunkSource.getChunkNow(chunkX, chunkZ) != null,
+                        neighborPos -> {
+                            if (!pending.player.mayInteract(level, neighborPos)) {
+                                return false;
+                            }
+                            BlockState neighborState = level.getBlockState(neighborPos);
+                            return selection.allows(neighborState)
+                                    && VeinMinerPlayerSettings.allowsBlock(
+                                            pending.player, neighborState)
+                                    && isEquivalentTarget(
+                                            pending.originState, neighborState, category, config);
+                        });
 
         miningVein = true;
         MiningContext context =
@@ -180,37 +150,6 @@ public final class VeinMiningHandler {
             MINING_CONTEXT.remove();
             miningVein = false;
         }
-    }
-
-    /**
-     * Whether the chunk holding {@code pos} and the eight chunks around it are all loaded as full
-     * chunks right now: {@code getChunkNow} returns a chunk only when it is present at FULL and its
-     * ticket still allows FULL (ServerChunkCache.java:175-203, GenerationChunkHolder.java:260-262).
-     * A chunk with a ticket that is still loading or generating does not count. Reading a block in
-     * a chunk that is not loaded blocks the server thread until the chunk is loaded or generated
-     * (Level.java:353-360, ServerChunkCache.java:162-163). Breaking a block reads its six
-     * neighbours (Level.java:245,254, NeighborUpdater.java:45), which lie in these nine chunks. A
-     * neighbour that changes shape reads its own neighbours and updates them in turn
-     * (RedstoneWireBlock.java:181-185, NeighborUpdater.java:48-49), so those further reads have no
-     * fixed reach and are not covered.
-     */
-    private static boolean isAreaLoaded(
-            ServerLevel level, BlockPos pos, Long2BooleanOpenHashMap cache) {
-        int chunkX = SectionPos.blockToSectionCoord(pos.getX());
-        int chunkZ = SectionPos.blockToSectionCoord(pos.getZ());
-        long key = ChunkPos.pack(chunkX, chunkZ);
-        if (cache.containsKey(key)) {
-            return cache.get(key);
-        }
-        ServerChunkCache chunks = level.getChunkSource();
-        boolean loaded = true;
-        for (int dx = -1; dx <= 1 && loaded; dx++) {
-            for (int dz = -1; dz <= 1 && loaded; dz++) {
-                loaded = chunks.getChunkNow(chunkX + dx, chunkZ + dz) != null;
-            }
-        }
-        cache.put(key, loaded);
-        return loaded;
     }
 
     private static boolean canAffordAdditionalBlock(ItemStack tool, VeinMinerConfig config) {
