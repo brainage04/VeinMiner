@@ -1,38 +1,28 @@
 # Vein Miner
 
-Vein Miner is a server-side Fabric and NeoForge mod for Minecraft 26.3 that mines connected ore and tree blocks when a player breaks one eligible block. Vanilla clients can join without installing the mod.
-
-Mining is enabled server-wide by default. Each player also has a persistent personal toggle and activation mode. The default mode is `while_sneaking`.
+Vein Miner is a server-side Fabric and NeoForge mod for Minecraft 26.3 that mines connected ore and tree blocks when a player breaks a block.
 
 ## Features
 
-- The built-in selection policy allows `#vein_miner:ores` and `#vein_miner:trees`. Those tags include `#c:ores` and `#minecraft:logs`, respectively.
-- Operators can add exact blocks or block tags and can deny exact blocks or tags. Denials take precedence over allowances.
-- A player's optional personal whitelist can only narrow the server policy; it cannot enable a server-denied block.
-- Ore, tree, and other blocks have separate traversal limits.
-- Adjacency can use faces only, faces and edges, or all 26 neighboring positions.
-- Better ore mining joins matching normal and deepslate ore variants. Better tree mining joins logs, wood, stems, and hyphae from the same wood family, including stripped variants.
-- Extra blocks use configurable durability and exhaustion costs. Tool protection stops traversal before an extra block would cross the configured remaining-durability floor.
-- A vein skips blocks the player may not touch, such as blocks under spawn protection or beyond the world border, and blocks in or next to chunks that are not loaded.
-- Other mods, such as claim mods, are asked about every extra block through the break events: Fabric's `PlayerBlockBreakEvents.BEFORE` and NeoForge's `BreakBlockEvent`. Hooks that fire only when a player starts digging are not asked again: Fabric's `AttackBlockCallback` and NeoForge's `PlayerInteractEvent.LeftClickBlock`.
-- Leaves are never vein-mined, even when a selection allows them.
-- Fast leaf decay has its own enable switch and multiplier, independent of connected tree mining.
+- Global and per-player block and block category matching (`#vein_miner:ores` and `#vein_miner:trees)` - those tags include `#c:ores` and `#minecraft:logs` respectively
 
-Vanilla loot tables, block entities, mining statistics, and tool checks are preserved for every mined block.
+* Works with directly adjacent faces (6), faces + edges (18), or faces + edges + corners (3x3 - 26)
+* Groups normal + deepslate ore variants and log + wood variants
+* Durability and exhaustion costs
+* Fast leaf decay
+* Accounts for spawn protection, world border, unloaded chunks and statistics correctly
 
-## Getting started
+## Requirements
 
-- Minecraft 26.3
-- Fabric Loader 0.19.5 or newer with Fabric API, or NeoForge 26.3.0.99 or newer
-- BrainageLib 2.0.0 or newer, below 3.0.0
-- Java 25 or newer
-- Install Vein Miner and BrainageLib on the server.
+- Fabric Loader >=0.19.5 w/ Fabric API or NeoForge >=26.3.0.99
+- BrainageLib >=2.0.0
+- Java >=25
 
 ## Commands
 
 ### Player commands
 
-`/veinminer` shows the effective global and personal state plus relevant help.
+`/veinminer` shows global and personal state plus relevant help:
 
 - `/veinminer help`
 - `/veinminer toggle`
@@ -54,7 +44,7 @@ Adding the first personal block enables the personal whitelist filter. Clearing 
 
 ### Operator commands
 
-Operator-only controls are under `/veinminer admin`.
+Operator-only controls are under `/veinminer admin:`
 
 - `/veinminer admin`
 - `/veinminer admin enable|disable|toggle`
@@ -80,24 +70,16 @@ Operator-only controls are under `/veinminer admin`.
 - `/veinminer admin selection tags deny add|remove <tag-id>`
 - `/veinminer admin selection tags deny list [page]`
 
-Tag arguments use identifiers without `#`, for example `c:ores` or `minecraft:logs`; an id without a namespace, such as `logs`, means `minecraft:logs`. `add` tab-completes the server's block tags and `remove` completes the tags currently in that selection.
-
 ### BrainageLib commands
 
-Vein Miner registers with BrainageLib's combined first-join notice.
+- `/servermods help` - prints the help lists for all mods which depend on BrainageLib
+- `/servermods config` - (operators only) prints the settings command for each mod which depends on BrainageLib
 
-- `/servermods help` - prints the help lists for all mods which depend on BrainageLib.
-- `/servermods config` - (operators only) prints the settings command for each mod which depends on BrainageLib.
+## Config
 
-## Configuration
+Global config is stored in `config/vein_miner.json`.
 
-Server policy is stored in `config/vein_miner.json`. Changes made through operator commands are saved immediately. Invalid numeric values and malformed identifiers are corrected to bounded defaults during reload, with warnings in the server log.
-
-Persistent player preferences are stored per world in `<world>/vein-miner-players.json`. Removing a block from the global policy does not erase it from player lists; it remains inactive unless an operator allows it again.
-
-If either file cannot be read (malformed JSON, or a player file with another `schemaVersion`), Vein Miner leaves it untouched: changes made with commands apply until the server stops and the command says they could not be saved. Fix the file and restart the server. For `vein_miner.json`, `/veinminer admin reload` also works. `vein_miner.json` has no version number: one written by a newer Vein Miner loads, and the settings this version does not know are dropped the next time a command saves the file.
-
-A `vein_miner.json` from Vein Miner 1.0.1 or earlier, recognised by its `veinSize`, is converted on load. Its `veinSize` becomes all three category limits. Its `whitelist` stays the complete list of blocks to vein-mine, with no tags allowed, unless it is still 1.0.1's default list, which gets the default tags as well.
+Per-player config is stored per world in `<world>/vein-miner-players.json`. Removing a block from the global policy does not erase it from player lists - it just remains inactive unless an operator allows it again.
 
 ## Compatibility
 
@@ -105,6 +87,6 @@ When [Telekinesis](https://github.com/brainage04/Telekinesis) is installed, drop
 
 ## Documentation
 
-- [Development](docs/DEVELOPMENT.md) - builds and tests.
-- [Release automation](docs/RELEASE.md) - release workflow.
-- [Modrinth publishing](docs/MODRINTH.md) - optional publishing setup.
+- [Development](docs/DEVELOPMENT.md) - builds and tests
+- [Release automation](docs/RELEASE.md) - release workflow
+- [Modrinth publishing](docs/MODRINTH.md) - optional Modrinth publishing setup
