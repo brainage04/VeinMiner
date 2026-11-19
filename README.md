@@ -20,28 +20,6 @@ Vein Miner is a server-side Fabric and NeoForge mod for Minecraft 26.3 that mine
 
 ## Commands
 
-### Player commands
-
-`/veinminer` shows global and personal state plus relevant help:
-
-- `/veinminer help`
-- `/veinminer toggle`
-- `/veinminer enable`
-- `/veinminer disable`
-- `/veinminer mode while_sneaking`
-- `/veinminer mode while_not_sneaking`
-- `/veinminer mode always`
-- `/veinminer mode never`
-- `/veinminer whitelist`
-- `/veinminer whitelist enable`
-- `/veinminer whitelist disable`
-- `/veinminer whitelist add <block>`
-- `/veinminer whitelist remove <block>`
-- `/veinminer whitelist list [page]`
-- `/veinminer whitelist clear`
-
-Adding the first personal block enables the personal whitelist filter. Clearing it leaves an empty filter enabled, which intentionally prevents all vein mining until the player disables the filter or adds another allowed block.
-
 ### Operator commands
 
 Operator-only controls are under `/veinminer admin:`
@@ -69,6 +47,28 @@ Operator-only controls are under `/veinminer admin:`
 - `/veinminer admin selection tags allow list [page]`
 - `/veinminer admin selection tags deny add|remove <tag-id>`
 - `/veinminer admin selection tags deny list [page]`
+
+### Player commands
+
+`/veinminer` shows global and personal state plus relevant help:
+
+- `/veinminer help`
+- `/veinminer toggle`
+- `/veinminer enable`
+- `/veinminer disable`
+- `/veinminer mode while_sneaking`
+- `/veinminer mode while_not_sneaking`
+- `/veinminer mode always`
+- `/veinminer mode never`
+- `/veinminer whitelist`
+- `/veinminer whitelist enable`
+- `/veinminer whitelist disable`
+- `/veinminer whitelist add <block>`
+- `/veinminer whitelist remove <block>`
+- `/veinminer whitelist list [page]`
+- `/veinminer whitelist clear`
+
+Adding the first personal block enables the personal whitelist filter. Clearing it leaves an empty filter enabled, which intentionally prevents all vein mining until the player disables the filter or adds another allowed block.
 
 ### BrainageLib commands
 
